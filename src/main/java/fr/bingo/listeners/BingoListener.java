@@ -192,8 +192,8 @@ public class BingoListener implements Listener {
                 if (!team.hasUnlocked(objectiveId)) {
                     team.unlockObjective(objectiveId, grid.getSize());
 
-                    // Rafraîchir la grille : item trouvé → étoile ★
-                    new DatapackManager().refreshFoundItems(grid);
+                    // Award "found" per-player (uniquement cette équipe voit l'or)
+                    DatapackManager.markObjectiveFound(grid, team, objectiveId);
 
                     String displayName = obj.getId().replace("_", " ");
                     String prefix = obj.isAchievement() ? "§d[Achievement] " : "";

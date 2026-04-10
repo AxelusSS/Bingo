@@ -2,28 +2,26 @@ package fr.bingo.game;
 
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
-import fr.bingo.team.TeamManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Gère la génération du datapack d'advancements pour la grille Bingo.
  *
- * Tous les items : tick (auto-complete → visible, doré).
- * Items trouvés : frame "challenge" (étoile ★) via regénération.
- * Debounce intégré pour éviter les reloads multiples.
+ * Système per-player :
+ * 1. Items avec critère "found" (impossible) → gris par défaut
+ * 2. Après reload : award "found" sur TOUT pour TOUS → visible + doré
+ * 3. Puis revoke "found" pour TOUS → visible mais GRIS (client les connaît)
+ * 4. En jeu : award "found" par équipe → per-player gris/or
  */
 public class DatapackManager {
 
     private final String namespace = "bingoclassique";
-    private static int pendingReloadTask = -1;
 
     public static String getAdvancementId(int row, int col) {
         return String.format("r%dc%d", row, col);
@@ -33,7 +31,7 @@ public class DatapackManager {
         return getAdvancementId(index / gridSize, index % gridSize);
     }
 
-    // ── Génération initiale ──
+    // ── Génération ──
 
     public void generateAdvancementsDatapack(BingoGrid grid) {
         File dataFolder = getDataFolder();
@@ -58,72 +56,115 @@ public class DatapackManager {
                         ? namespace + ":root"
                         : namespace + ":" + getAdvancementId(row, col - 1);
 
-                createItemAdvancement(dataFolder, obj, advId, parent, false);
+                createItemAdvancement(dataFolder, obj, advId, parent);
             }
         }
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             enableAndReload();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.sendMessage("§b§l[Bingo] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
-            }
+
+            // Étape 1 : Award "found" pour TOUS → tout visible + doré
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                awardAllForAllPlayers(grid);
+
+                // Étape 2 : Revoke "found" pour TOUS → tout visible mais GRIS
+                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                    revokeAllForAllPlayers(grid);
+
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.sendMessage("§b§l[Bingo] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
+                    }
+                }, 5L);
+            }, 5L);
         }, 10L);
     }
 
     /**
-     * Rafraîchit la grille avec les items trouvés.
-     * Items trouvés (toutes équipes confondues) → frame challenge (★).
-     * Debounce intégré.
+     * Award "found" sur TOUS les items pour TOUS les joueurs.
+     * Le client découvre tous les items (ils deviennent visibles).
      */
-    public void refreshFoundItems(BingoGrid grid) {
-        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
-        Set<String> foundIds = new HashSet<>();
-        for (BingoTeam team : tm.getTeams()) {
-            foundIds.addAll(team.getUnlockedObjectives());
-        }
-
-        File dataFolder = getDataFolder();
-        if (dataFolder == null) return;
-
+    private void awardAllForAllPlayers(BingoGrid grid) {
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
-                int index = row * size + col;
-                if (index >= objectives.size()) break;
-
-                BingoObjective obj = objectives.get(index);
-                String advId = getAdvancementId(row, col);
-                String parent = col == 0
-                        ? namespace + ":root"
-                        : namespace + ":" + getAdvancementId(row, col - 1);
-                boolean found = foundIds.contains(obj.getId());
-
-                createItemAdvancement(dataFolder, obj, advId, parent, found);
+        for (int i = 0; i < objectives.size(); i++) {
+            String advId = getAdvancementIdFromIndex(i, size);
+            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
+            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+            if (adv != null) {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.getAdvancementProgress(adv).awardCriteria("found");
+                }
             }
         }
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Award ALL pour " + Bukkit.getOnlinePlayers().size() + " joueurs sur " + objectives.size() + " items.");
+    }
 
-        if (pendingReloadTask != -1) {
-            Bukkit.getScheduler().cancelTask(pendingReloadTask);
+    /**
+     * Revoke "found" sur TOUS les items pour TOUS les joueurs.
+     * Les items restent visibles (le client les connaît) mais repassent en GRIS.
+     */
+    private void revokeAllForAllPlayers(BingoGrid grid) {
+        List<BingoObjective> objectives = grid.getObjectives();
+        int size = grid.getSize();
+
+        for (int i = 0; i < objectives.size(); i++) {
+            String advId = getAdvancementIdFromIndex(i, size);
+            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
+            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+            if (adv != null) {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.getAdvancementProgress(adv).revokeCriteria("found");
+                }
+            }
         }
-        pendingReloadTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            enableAndReload();
-            pendingReloadTask = -1;
-        }, 10L).getTaskId();
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Revoke ALL pour " + Bukkit.getOnlinePlayers().size() + " joueurs. Items maintenant GRIS.");
+    }
+
+    /**
+     * Quand une équipe trouve un item :
+     * → Award "found" pour TOUS les joueurs de cette équipe uniquement.
+     * → Les autres équipes voient toujours l'item en GRIS.
+     */
+    public static void markObjectiveFound(BingoGrid grid, BingoTeam team, String objectiveId) {
+        List<BingoObjective> objectives = grid.getObjectives();
+        int size = grid.getSize();
+
+        for (int i = 0; i < objectives.size(); i++) {
+            if (objectives.get(i).getId().equalsIgnoreCase(objectiveId)) {
+                String advId = getAdvancementIdFromIndex(i, size);
+                org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
+
+                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+                    if (adv != null) {
+                        for (java.util.UUID uuid : team.getPlayers()) {
+                            Player p = Bukkit.getPlayer(uuid);
+                            if (p != null) {
+                                p.getAdvancementProgress(adv).awardCriteria("found");
+                            }
+                        }
+                    }
+                }, 1L);
+                break;
+            }
+        }
     }
 
     // ── JSON ──
 
-    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent, boolean found) {
+    /**
+     * Item avec un seul critère "found" (impossible).
+     * Gris par défaut, or quand "found" est award per-player.
+     */
+    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent) {
         String iconId = "minecraft:" + obj.getDisplayMaterial().name().toLowerCase();
         String name = obj.getId().replace("_", " ").replace("/", " > ");
         if (!name.isEmpty()) name = name.substring(0, 1).toUpperCase() + name.substring(1);
 
-        String frame = found ? "challenge" : "task";
-        String desc = found
-                ? "\\u00a7a\\u2714 Trouv\\u00e9 !"
-                : (obj.isAchievement() ? "\\u00a7d[Achievement] " + name : "Obtenir " + name);
+        String desc = obj.isAchievement()
+                ? "\\u00a7d[Achievement] " + name
+                : "Obtenir " + name;
 
         saveFile(dir, advId + ".json",
                 "{\n" +
@@ -132,13 +173,13 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"" + iconId + "\" },\n" +
                 "    \"title\": \"" + name + "\",\n" +
                 "    \"description\": \"" + desc + "\",\n" +
-                "    \"frame\": \"" + frame + "\",\n" +
+                "    \"frame\": \"task\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
-                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
+                "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
                 "  }\n" +
                 "}");
     }
