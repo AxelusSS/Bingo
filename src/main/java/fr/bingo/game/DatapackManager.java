@@ -2,26 +2,29 @@ package fr.bingo.game;
 
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
+import fr.bingo.team.TeamManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Gère la génération du datapack d'advancements pour la grille Bingo.
  *
- * Système per-player :
- * 1. Items avec critère "found" (impossible) → gris par défaut
- * 2. Après reload : award "found" sur TOUT pour TOUS → visible + doré
- * 3. Puis revoke "found" pour TOUS → visible mais GRIS (client les connaît)
- * 4. En jeu : award "found" par équipe → per-player gris/or
+ * - Tous les items : tick (auto-complete → visible, doré)
+ * - Items trouvés : frame "challenge" (étoile ★) via regénération
+ * - Grille en chaîne linéaire (root → c0 → c1 → ...)
+ * - Per-team tracking via le /bg GUI (BingoGridGUI)
  */
 public class DatapackManager {
 
     private final String namespace = "bingoclassique";
+    private static int pendingReloadTask = -1;
 
     public static String getAdvancementId(int row, int col) {
         return String.format("r%dc%d", row, col);
@@ -45,6 +48,9 @@ public class DatapackManager {
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
+        // Collecter les items déjà trouvés (toutes équipes confondues)
+        Set<String> foundIds = collectFoundIds();
+
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 int index = row * size + col;
@@ -52,78 +58,80 @@ public class DatapackManager {
 
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
-                String relayId = "relay_" + advId;
-
-                // Le relay parent : col 0 → root, sinon → item précédent
-                String relayParent = (col == 0)
+                String parent = col == 0
                         ? namespace + ":root"
                         : namespace + ":" + getAdvancementId(row, col - 1);
+                boolean found = foundIds.contains(obj.getId());
 
-                // 1) Relay invisible (tick, DONE, pas de display)
-                createRelayAdvancement(dataFolder, relayId, relayParent);
-
-                // 2) Item réel (impossible, display, parent = relay)
-                createItemAdvancement(dataFolder, obj, advId, namespace + ":" + relayId);
+                createItemAdvancement(dataFolder, obj, advId, parent, found);
             }
         }
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             enableAndReload();
-
-            // Les relais invisibles (tick) rendent tout visible automatiquement.
-            // Items commencent GRIS → award "found" per-team quand trouvé.
-            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.sendMessage("§b§l[Bingo] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
-                }
-            }, 10L);
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage("§b§l[Bingo] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
+            }
         }, 10L);
     }
 
     /**
-     * Quand une équipe trouve un item :
-     * → Award "found" pour TOUS les joueurs de cette équipe uniquement.
-     * → Les autres équipes voient toujours l'item en GRIS.
+     * Rafraîchit les frames : items trouvés → challenge (★), non trouvés → task.
+     * Debounce intégré (10 ticks).
      */
-    public static void markObjectiveFound(BingoGrid grid, BingoTeam team, String objectiveId) {
+    public void refreshFoundItems(BingoGrid grid) {
+        File dataFolder = getDataFolder();
+        if (dataFolder == null) return;
+
+        Set<String> foundIds = collectFoundIds();
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        for (int i = 0; i < objectives.size(); i++) {
-            if (objectives.get(i).getId().equalsIgnoreCase(objectiveId)) {
-                String advId = getAdvancementIdFromIndex(i, size);
-                org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
+        for (int row = 0; row < size; row++) {
+            for (int col = 0; col < size; col++) {
+                int index = row * size + col;
+                if (index >= objectives.size()) break;
 
-                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-                    if (adv != null) {
-                        for (java.util.UUID uuid : team.getPlayers()) {
-                            Player p = Bukkit.getPlayer(uuid);
-                            if (p != null) {
-                                p.getAdvancementProgress(adv).awardCriteria("found");
-                            }
-                        }
-                    }
-                }, 1L);
-                break;
+                BingoObjective obj = objectives.get(index);
+                String advId = getAdvancementId(row, col);
+                String parent = col == 0
+                        ? namespace + ":root"
+                        : namespace + ":" + getAdvancementId(row, col - 1);
+                boolean found = foundIds.contains(obj.getId());
+
+                createItemAdvancement(dataFolder, obj, advId, parent, found);
             }
         }
+
+        if (pendingReloadTask != -1) {
+            Bukkit.getScheduler().cancelTask(pendingReloadTask);
+        }
+        pendingReloadTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+            enableAndReload();
+            pendingReloadTask = -1;
+        }, 10L).getTaskId();
+    }
+
+    private Set<String> collectFoundIds() {
+        Set<String> foundIds = new HashSet<>();
+        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+        for (BingoTeam team : tm.getTeams()) {
+            foundIds.addAll(team.getUnlockedObjectives());
+        }
+        return foundIds;
     }
 
     // ── JSON ──
 
-    /**
-     * Item avec un seul critère "found" (impossible).
-     * Gris par défaut, or quand "found" est award per-player.
-     */
-    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent) {
+    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent, boolean found) {
         String iconId = "minecraft:" + obj.getDisplayMaterial().name().toLowerCase();
         String name = obj.getId().replace("_", " ").replace("/", " > ");
         if (!name.isEmpty()) name = name.substring(0, 1).toUpperCase() + name.substring(1);
 
-        String desc = obj.isAchievement()
-                ? "\\u00a7d[Achievement] " + name
-                : "Obtenir " + name;
+        String frame = found ? "challenge" : "task";
+        String desc = found
+                ? "\\u00a7a\\u2714 Trouv\\u00e9 !"
+                : (obj.isAchievement() ? "\\u00a7d[Achievement] " + name : "Obtenir " + name);
 
         saveFile(dir, advId + ".json",
                 "{\n" +
@@ -132,31 +140,7 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"" + iconId + "\" },\n" +
                 "    \"title\": \"" + name + "\",\n" +
                 "    \"description\": \"" + desc + "\",\n" +
-                "    \"frame\": \"task\",\n" +
-                "    \"show_toast\": false,\n" +
-                "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
-                "  },\n" +
-                "  \"criteria\": {\n" +
-                "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
-                "  }\n" +
-                "}");
-    }
-
-    /**
-     * Relay invisible : pas de "display" → n'apparaît pas dans l'UI.
-     * Critère tick → toujours DONE → ses enfants sont visibles.
-     * Display minimal (vitre bleu clair) pour compter comme "noeud affiché complété".
-     */
-    private void createRelayAdvancement(File dir, String relayId, String parent) {
-        saveFile(dir, relayId + ".json",
-                "{\n" +
-                "  \"parent\": \"" + parent + "\",\n" +
-                "  \"display\": {\n" +
-                "    \"icon\": { \"id\": \"minecraft:light_blue_stained_glass_pane\" },\n" +
-                "    \"title\": \" \",\n" +
-                "    \"description\": \" \",\n" +
-                "    \"frame\": \"task\",\n" +
+                "    \"frame\": \"" + frame + "\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
