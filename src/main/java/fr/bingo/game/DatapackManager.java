@@ -107,15 +107,20 @@ public class DatapackManager {
                 String advId = getAdvancementIdFromIndex(i, size);
                 org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
 
+                BingoPlugin.getInstance().getLogger().info("[Bingo] markObjectiveFound: " + objectiveId + " → " + key);
+
                 Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
                     org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
                     if (adv != null) {
                         for (java.util.UUID uuid : team.getPlayers()) {
                             Player p = Bukkit.getPlayer(uuid);
                             if (p != null) {
-                                p.getAdvancementProgress(adv).awardCriteria("found");
+                                boolean success = p.getAdvancementProgress(adv).awardCriteria("found");
+                                BingoPlugin.getInstance().getLogger().info("[Bingo] Award 'found' pour " + p.getName() + " sur " + advId + " → " + (success ? "OK" : "ECHEC"));
                             }
                         }
+                    } else {
+                        BingoPlugin.getInstance().getLogger().warning("[Bingo] Advancement introuvable: " + key);
                     }
                 }, 1L);
                 break;
@@ -230,22 +235,29 @@ public class DatapackManager {
     }
 
     /**
-     * Revoke TOUTE la progression de TOUS les advancements pour TOUS les joueurs.
-     * Garantit un affichage propre (pas d'items dorés fantômes).
+     * Revoke uniquement les progressions des ITEMS bingo (rXcY).
+     * Ne touche PAS au root ni aux bridges (ils doivent rester DONE pour la visibilité).
      */
     private void revokeAllAdvancements() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            // Revoke TOUS les advancements connus du serveur
             java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
             while (it.hasNext()) {
                 org.bukkit.advancement.Advancement adv = it.next();
+                String key = adv.getKey().toString();
+
+                // Ne revoquer que les items bingo (bingoclassique:rXcY)
+                // Ignorer root, ponts (bXcY) et advancements vanilla
+                if (!key.startsWith(namespace + ":r")) continue;
+
                 org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(adv);
-                for (String criteria : progress.getAwardedCriteria()) {
+                // Copier pour éviter ConcurrentModificationException
+                java.util.Set<String> awarded = new java.util.HashSet<>(progress.getAwardedCriteria());
+                for (String criteria : awarded) {
                     progress.revokeCriteria(criteria);
                 }
             }
         }
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Progressions revoquées pour tous les joueurs.");
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Progressions des items bingo revoquées.");
     }
 
     // ── Utilitaires ──
