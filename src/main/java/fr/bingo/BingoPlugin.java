@@ -18,9 +18,9 @@ public class BingoPlugin extends JavaPlugin {
         instance = this;
         this.logger = getLogger();
         
-        logger.info("=============================");
-        logger.info("   BingoTheGuill - ACTIVE");
-        logger.info("=============================");
+        logger.info("===================================");
+        logger.info("   Bingo - ACTIVE");
+        logger.info("===================================");
 
         // Initialisation des configurations
         saveDefaultConfig();
@@ -51,7 +51,10 @@ public class BingoPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        logger.info("BingoTheGuill a été désactivé.");
+        // Plugin shutdown logic
+        logger.info("Bingo a été désactivé.");
+        
+        // Fermer la connexion SQL proprement
         if (databaseManager != null) {
             databaseManager.close();
         }

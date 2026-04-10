@@ -1,9 +1,9 @@
-name: BingoTheGuill
-version: 1.0
+name: Bingo
+version: 1.0-SNAPSHOT
 main: fr.bingo.BingoPlugin
 api-version: 1.21
-authors: [Antigravity, TheGuill84 Community]
-description: Un plugin reproduisant le mode de jeu Bingo de TheGuill84.
+authors: [Antigravity]
+description: Un plugin reproduisant le mode de jeu Bingo.
 
 commands:
   bingo:

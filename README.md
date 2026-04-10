@@ -1,10 +1,10 @@
-# 🎲 Minecraft Bingo (TheGuill84 Edition)
+# 🎲 Minecraft Bingo Classique
 
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.1-brightgreen.svg)
 ![PaperMC](https://img.shields.io/badge/API-PaperMC-blue.svg)
 ![Java](https://img.shields.io/badge/Java-21-orange.svg)
 
-Un plugin performant, complet et *Vanilla-friendly* reproduisant le célèbre mode de jeu **Bingo de TheGuill84**. Pas de mods requis du côté des joueurs : l'entièreté de l'interface et des défis (Advancements) sont générés par le serveur !
+Un plugin performant, complet et *Vanilla-friendly* reproduisant le célèbre mode de jeu **Bingo**. Pas de mods requis du côté des joueurs : l'entièreté de l'interface et des défis (Advancements) sont générés par le serveur !
 
 ---
 
