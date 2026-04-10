@@ -17,9 +17,6 @@ commands:
     description: Alias pour team join
   team:
     description: Gestion des équipes
-  party:
-    description: Commande pour lancer ou mettre en pause la partie
-    permission: bingo.admin
   pregen:
     description: Pré-générer les chunks
     permission: bingo.admin

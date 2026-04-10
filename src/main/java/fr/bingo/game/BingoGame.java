@@ -3,6 +3,8 @@ package fr.bingo.game;
 import fr.bingo.BingoPlugin;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public class BingoGame {
 
@@ -10,8 +12,10 @@ public class BingoGame {
     private Location waitingPlatformLocation;
     private final BingoGrid grid;
     private long startTime;
+    private long pausedElapsed; // temps écoulé au moment de la pause
     private Difficulty difficulty = Difficulty.HARD;
     private BingoMode mode = BingoMode.ITEMS;
+    private int gameDurationMinutes = 120; // durée par défaut 2h
 
     public BingoGame() {
         this.state = GameState.WAITING;
@@ -29,9 +33,12 @@ public class BingoGame {
     public BingoMode getMode() { return mode; }
     public void setMode(BingoMode m) { this.mode = m; }
     public long getStartTime() { return startTime; }
+    public int getGameDurationMinutes() { return gameDurationMinutes; }
+    public void setGameDurationMinutes(int minutes) { this.gameDurationMinutes = minutes; }
 
     public long getElapsedSeconds() {
         if (state == GameState.WAITING) return 0;
+        if (state == GameState.PAUSED) return pausedElapsed;
         return (System.currentTimeMillis() - startTime) / 1000;
     }
 
@@ -122,6 +129,43 @@ public class BingoGame {
         }
     }
 
+    // ── Pause / Resume ──
+
+    public void pauseParty() {
+        if (this.state != GameState.PLAYING) return;
+        this.pausedElapsed = getElapsedSeconds();
+        this.state = GameState.PAUSED;
+
+        // Freeze tous les joueurs
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, Integer.MAX_VALUE, 255, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 250, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, Integer.MAX_VALUE, 255, false, false, false));
+            p.setInvulnerable(true);
+            p.sendTitle("§c§lPAUSE", "§7La partie est en pause", 0, 60, 10);
+            p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.5f, 0.5f);
+        }
+        Bukkit.broadcastMessage("§c§l►► PARTIE EN PAUSE ◄◄");
+    }
+
+    public void resumeParty() {
+        if (this.state != GameState.PAUSED) return;
+        // Recalculer le startTime pour conserver le temps écoulé
+        this.startTime = System.currentTimeMillis() - (pausedElapsed * 1000);
+        this.state = GameState.PLAYING;
+
+        // Unfreeze tous les joueurs
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.removePotionEffect(PotionEffectType.SLOWNESS);
+            p.removePotionEffect(PotionEffectType.JUMP_BOOST);
+            p.removePotionEffect(PotionEffectType.MINING_FATIGUE);
+            p.setInvulnerable(false);
+            p.sendTitle("§a§lREPRISE !", "§eC'est reparti !", 0, 30, 10);
+            p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+        }
+        Bukkit.broadcastMessage("§a§l►► REPRISE DE LA PARTIE ! ◄◄");
+    }
+
     // ── Reset ──
 
     public void resetGame() {
@@ -139,6 +183,11 @@ public class BingoGame {
         setupWaitingPlatform();
 
         for (Player p : Bukkit.getOnlinePlayers()) {
+            // Retirer les effets de pause si présents
+            p.removePotionEffect(PotionEffectType.SLOWNESS);
+            p.removePotionEffect(PotionEffectType.JUMP_BOOST);
+            p.removePotionEffect(PotionEffectType.MINING_FATIGUE);
+
             p.setGameMode(GameMode.ADVENTURE);
             p.getInventory().clear();
             p.setHealth(20);
@@ -172,10 +221,5 @@ public class BingoGame {
         meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
         compass.setItemMeta(meta);
         player.getInventory().setItem(8, compass); // Slot 9 (dernier)
-    }
-
-    public void pauseParty() {
-        this.state = GameState.PAUSED;
-        Bukkit.broadcastMessage("§c§lPARTIE EN PAUSE !");
     }
 }

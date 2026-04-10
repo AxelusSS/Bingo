@@ -64,10 +64,17 @@ public class AdminConfigGUI implements InventoryHolder {
                         (mode == BingoMode.MIXED ? "§6▸ " : "§7  ") + "Mixte"));
         inventory.setItem(4, modeItem);
 
-        // Slot 6 : Random Teams
-        ItemStack randomItem = createItem(Material.PLAYER_HEAD, "§e§lÉquipes Aléatoires",
-                List.of("§7Répartir les joueurs aléatoirement", "§7Clic pour exécuter"));
-        inventory.setItem(6, randomItem);
+        // Slot 6 : Durée
+        int duration = game.getGameDurationMinutes();
+        String durationStr = duration >= 60
+                ? (duration / 60) + "h" + (duration % 60 > 0 ? String.format("%02d", duration % 60) : "")
+                : duration + "min";
+        ItemStack timeItem = createItem(Material.CLOCK, "§e§lDurée : §b" + durationStr,
+                List.of("§7Clic pour changer",
+                        (duration == 60 ? "§b▸ " : "§7  ") + "1h",
+                        (duration == 90 ? "§b▸ " : "§7  ") + "1h30",
+                        (duration == 120 ? "§b▸ " : "§7  ") + "2h"));
+        inventory.setItem(6, timeItem);
 
         // Slot 8 : Lock/Unlock Teams
         boolean locked = BingoPlugin.getInstance().getTeamManager().isTeamsLocked();
@@ -76,18 +83,25 @@ public class AdminConfigGUI implements InventoryHolder {
                 List.of("§7Clic pour " + (locked ? "déverrouiller" : "verrouiller")));
         inventory.setItem(8, lockItem);
 
-        // Slot 12 : GÉNÉRER
+        // Slot 11 : Random Teams
+        ItemStack randomItem = createItem(Material.PLAYER_HEAD, "§e§lÉquipes Aléatoires",
+                List.of("§7Répartir les joueurs aléatoirement", "§7Clic pour exécuter"));
+        inventory.setItem(11, randomItem);
+
+        // Slot 13 : GÉNÉRER
         ItemStack genItem = createItem(Material.NETHER_STAR, "§a§l✦ GÉNÉRER LA GRILLE",
-                List.of("§7Génère une nouvelle grille", "§7avec les paramètres actuels",
+                List.of("§7Génère une nouvelle grille",
+                        "§7avec les paramètres actuels",
                         "", "§7Taille : §b" + size + "x" + size,
                         "§7Difficulté : " + diff.getColor() + diff.getDisplayName(),
-                        "§7Mode : " + mode.getColor() + mode.getDisplayName()));
-        inventory.setItem(12, genItem);
+                        "§7Mode : " + mode.getColor() + mode.getDisplayName(),
+                        "§7Durée : §b" + durationStr));
+        inventory.setItem(13, genItem);
 
-        // Slot 14 : START
+        // Slot 15 : START
         ItemStack startItem = createItem(Material.LIME_CONCRETE, "§a§l▶ LANCER LA PARTIE",
                 List.of("§7Démarre le décompte et lance le Bingo !"));
-        inventory.setItem(14, startItem);
+        inventory.setItem(15, startItem);
 
         // Slot 22 : RESET
         ItemStack resetItem = createItem(Material.TNT, "§c§l↻ RESET",
@@ -121,9 +135,12 @@ public class AdminConfigGUI implements InventoryHolder {
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }
-            case 6 -> { // Random Teams
-                Bukkit.dispatchCommand(player, "team random 4");
-                player.closeInventory();
+            case 6 -> { // Durée
+                int current = game.getGameDurationMinutes();
+                int next = current == 60 ? 90 : current == 90 ? 120 : 60;
+                game.setGameDurationMinutes(next);
+                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                refresh(player);
             }
             case 8 -> { // Lock/Unlock
                 boolean locked = BingoPlugin.getInstance().getTeamManager().isTeamsLocked();
@@ -131,7 +148,11 @@ public class AdminConfigGUI implements InventoryHolder {
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }
-            case 12 -> { // Générer
+            case 11 -> { // Random Teams
+                Bukkit.dispatchCommand(player, "team random 4");
+                player.closeInventory();
+            }
+            case 13 -> { // Générer
                 player.closeInventory();
                 game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
                 new DatapackManager().generateAdvancementsDatapack(game.getGrid());
@@ -139,7 +160,7 @@ public class AdminConfigGUI implements InventoryHolder {
                         ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
             }
-            case 14 -> { // Start
+            case 15 -> { // Start
                 player.closeInventory();
                 if (game.getGrid().getObjectives().isEmpty()) {
                     player.sendMessage("§c§lERREUR : §cGénère d'abord une grille !");

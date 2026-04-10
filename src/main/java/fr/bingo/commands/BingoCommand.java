@@ -40,6 +40,40 @@ public class BingoCommand implements CommandExecutor {
         switch (sub) {
             case "grid" -> player.openInventory(new fr.bingo.gui.BingoGridGUI(player).getInventory());
 
+            case "start" -> {
+                if (!player.hasPermission("bingo.admin")) { player.sendMessage("§cPermission refusée."); return true; }
+                if (game.getState() == GameState.PLAYING) {
+                    player.sendMessage("§cLa partie est déjà en cours !");
+                    return true;
+                }
+                if (game.getGrid().getObjectives().isEmpty()) {
+                    player.sendMessage("§cVeuillez d'abord générer une grille avec /bingo generate !");
+                    return true;
+                }
+                game.startParty();
+            }
+
+            case "pause" -> {
+                if (!player.hasPermission("bingo.admin")) { player.sendMessage("§cPermission refusée."); return true; }
+                if (game.getState() == GameState.PAUSED) {
+                    // Si déjà en pause, reprendre
+                    game.resumeParty();
+                } else if (game.getState() == GameState.PLAYING) {
+                    game.pauseParty();
+                } else {
+                    player.sendMessage("§cAucune partie en cours.");
+                }
+            }
+
+            case "resume" -> {
+                if (!player.hasPermission("bingo.admin")) { player.sendMessage("§cPermission refusée."); return true; }
+                if (game.getState() != GameState.PAUSED) {
+                    player.sendMessage("§cLa partie n'est pas en pause.");
+                    return true;
+                }
+                game.resumeParty();
+            }
+
             case "generate" -> {
                 if (!player.hasPermission("bingo.admin")) { player.sendMessage("§cPermission refusée."); return true; }
                 game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
@@ -102,8 +136,7 @@ public class BingoCommand implements CommandExecutor {
                 try {
                     int minutes = Integer.parseInt(args[1]);
                     if (minutes < 1 || minutes > 600) { player.sendMessage("§cEntre 1 et 600 minutes."); return true; }
-                    BingoPlugin.getInstance().getConfig().set("game.default_game_time", minutes);
-                    BingoPlugin.getInstance().saveConfig();
+                    game.setGameDurationMinutes(minutes);
                     player.sendMessage("§aDurée : §b" + minutes + " minutes§a.");
                 } catch (NumberFormatException e) { player.sendMessage("§cNombre invalide."); }
             }
@@ -125,13 +158,15 @@ public class BingoCommand implements CommandExecutor {
         if (player.hasPermission("bingo.admin")) {
             player.sendMessage(" ");
             player.sendMessage("§c§lAdmin :");
-            player.sendMessage("§c/party start §7- Lancer la partie");
+            player.sendMessage("§c/bingo start §7- Lancer la partie");
+            player.sendMessage("§c/bingo pause §7- Pause / Reprendre");
+            player.sendMessage("§c/bingo resume §7- Reprendre la partie");
             player.sendMessage("§c/bingo generate §7- Générer une grille");
             player.sendMessage("§c/bingo size <N> §7- Taille (alias §e/bs§7)");
             player.sendMessage("§c/bingo difficulty <easy|normal|hard|extreme> §7- Difficulté");
             player.sendMessage("§c/bingo mode <items|achievements|mixed> §7- Mode");
-            player.sendMessage("§c/bingo reset §7- Réinitialiser la partie");
             player.sendMessage("§c/bingo time <min> §7- Durée maximale");
+            player.sendMessage("§c/bingo reset §7- Réinitialiser la partie");
             player.sendMessage("§c/team random <n> §7- Répartition aléatoire");
             player.sendMessage("§c/team lock §7- Verrouiller les équipes");
             player.sendMessage("§7§oOu utilisez le §6§ocompas §7§opour configurer !");

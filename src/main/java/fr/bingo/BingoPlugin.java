@@ -41,7 +41,6 @@ public class BingoPlugin extends JavaPlugin {
         getCommand("bingo").setExecutor(bingoCmd);
         getCommand("bs").setExecutor(bingoCmd);
         getCommand("bg").setExecutor(bingoCmd);
-        getCommand("party").setExecutor(new fr.bingo.commands.PartyCommand());
         getCommand("pregen").setExecutor(new fr.bingo.commands.PregenCommand());
 
         // Listeners
