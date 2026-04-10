@@ -33,11 +33,32 @@ public class BingoListener implements Listener {
         if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
             BingoPlugin.getInstance().getBingoGame().teleportToWaitingArea(player);
             teamManager.giveTeamBanners(player);
-            player.spigot().sendMessage(
-                net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
-                net.md_5.bungee.api.chat.TextComponent.fromLegacy("§b§lChoisis ton équipe dans l'inventaire")
-            );
+            startActionBarReminder(player);
         }
+    }
+
+    /**
+     * Affiche un message action bar en boucle tant que le joueur est dans l'équipe Spectateur.
+     * Se stoppe automatiquement quand il rejoint une vraie équipe ou que la game démarre.
+     */
+    private void startActionBarReminder(Player player) {
+        int taskId = org.bukkit.Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), () -> {
+            if (!player.isOnline()) return;
+
+            // Arrêter si la game a démarré
+            if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.WAITING) return;
+
+            TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+            fr.bingo.team.BingoTeam team = tm.getPlayerTeam(player);
+
+            // Afficher seulement si le joueur est spectateur (pas encore dans une team)
+            if (team == null || team.getName().equals("Spectateur")) {
+                player.spigot().sendMessage(
+                    net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
+                    net.md_5.bungee.api.chat.TextComponent.fromLegacy("§b§l⚑ Choisis ton équipe dans l'inventaire ⚑")
+                );
+            }
+        }, 0L, 30L).getTaskId(); // Toutes les 1.5 secondes
     }
 
     @EventHandler
