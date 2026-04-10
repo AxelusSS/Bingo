@@ -24,6 +24,7 @@ scoreboard:
   lines:
     - "§8------------------"
     - "§fChrono: §b{time}"
+    - "§fProgression: {progress}"
     - ""
     - "{team_1}"
     - "{team_2}"

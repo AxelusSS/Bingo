@@ -83,6 +83,16 @@ public class ScoreboardManager {
         for (String line : linesConfig) {
             String formatted = line.replace("{time}", timeStr);
 
+            // Progression de l'équipe du joueur
+            BingoTeam playerTeam = plugin.getTeamManager().getPlayerTeam(player);
+            if (playerTeam != null && !playerTeam.getName().equals("Spectateur")) {
+                int found = playerTeam.getUnlockedObjectives().size();
+                int total = plugin.getBingoGame().getGrid().getObjectives().size();
+                formatted = formatted.replace("{progress}", "§a" + found + "§7/" + total);
+            } else {
+                formatted = formatted.replace("{progress}", "§7-");
+            }
+
             for (int i = 0; i < sortedTeams.size(); i++) {
                 String ph = "{team_" + (i + 1) + "}";
                 if (formatted.contains(ph)) {
