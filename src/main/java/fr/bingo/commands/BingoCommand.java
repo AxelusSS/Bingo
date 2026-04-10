@@ -113,6 +113,7 @@ public class BingoCommand implements CommandExecutor {
             player.sendMessage("§c/party start §7- Lance la partie et TP les joueurs");
             player.sendMessage("§c/party pause §7- Met en pause le système");
             player.sendMessage("§c/bingo generate §7- Génère une nouvelle grille");
+            player.sendMessage("§c/bingo size <N> §7- Change la taille de la grille (alias §e/bs§7)");
             player.sendMessage("§c/bingo time <min> §7- Définit la durée maximale par défaut");
             player.sendMessage("§c/team random <nombre> §7- Répartition aléatoire");
             player.sendMessage("§c/team lock §7- Bloque les changements de team");

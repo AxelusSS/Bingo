@@ -48,17 +48,14 @@ public class DatapackManager {
                 
                 BingoObjective obj = objectives.get(index);
                 
-                String parent;
-                if (col == 0) {
-                    // Premier de la ligne => enfant direct de root => positionné verticalement
-                    parent = namespace + ":root";
-                } else {
-                    // Enfant du précédent dans la ligne => positionné à droite
-                    int prevIndex = row * size + (col - 1);
-                    parent = namespace + ":" + objectives.get(prevIndex).getId().toLowerCase();
-                }
+                // Parent = toujours root, on positionne tout manuellement avec x/y
+                String parent = namespace + ":root";
                 
-                createObjectiveAdvancement(dataFolder, obj, parent);
+                // Coordonnées absolues dans la vue advancement (espacement de 1.0)
+                float displayX = col * 1.0f;
+                float displayY = row * 1.0f;
+                
+                createObjectiveAdvancement(dataFolder, obj, parent, displayX, displayY);
             }
         }
 
@@ -98,7 +95,7 @@ public class DatapackManager {
         saveFile(dataFolder, "root.json", json);
     }
 
-    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String parent) {
+    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String parent, float x, float y) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
         String displayName = obj.getId().replace("_", " ");
         // Première lettre majuscule
@@ -115,7 +112,9 @@ public class DatapackManager {
                 "    \"frame\": \"task\",\n" +
                 "    \"show_toast\": true,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
+                "    \"hidden\": false,\n" +
+                "    \"x\": " + x + ",\n" +
+                "    \"y\": " + y + "\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"impossible\": {\n" +
