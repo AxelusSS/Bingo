@@ -9,6 +9,8 @@ commands:
   bingo:
     description: Commande principale du Bingo
     aliases: [b]
+  bg:
+    description: Ouvrir la grille de Bingo
   bs:
     description: Alias pour bingo size
   tj:
