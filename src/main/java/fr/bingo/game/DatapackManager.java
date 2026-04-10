@@ -12,6 +12,24 @@ public class DatapackManager {
 
     private final String namespace = "bingoclassique";
 
+    /**
+     * Retourne l'ID d'advancement pour un objectif à la position donnée dans la grille.
+     * Format : "r{row}c{col}" pour un contrôle total de l'ordre alphabétique
+     * (r0c1 < r1c0 → l'horizontal est toujours "premier enfant" → va à DROITE)
+     */
+    public static String getAdvancementId(int row, int col) {
+        return String.format("r%dc%d", row, col);
+    }
+
+    /**
+     * Retrouve l'ID d'advancement à partir de l'index dans la liste d'objectifs.
+     */
+    public static String getAdvancementIdFromIndex(int index, int gridSize) {
+        int row = index / gridSize;
+        int col = index % gridSize;
+        return getAdvancementId(row, col);
+    }
+
     public void generateAdvancementsDatapack(BingoGrid grid) {
         File worldFolder = Bukkit.getWorlds().get(0).getWorldFolder();
         File datapackFolder = new File(worldFolder, "datapacks/bingo_datapack");
@@ -43,44 +61,44 @@ public class DatapackManager {
                 if (index >= objectives.size()) break;
 
                 BingoObjective obj = objectives.get(index);
+                String advId = getAdvancementId(row, col);
 
+                // ── Chaînage en cascade ──
+                // col0, row0 → parent = root
+                // col0, rowN → parent = col0 de row(N-1)  (descend verticalement)
+                // colN       → parent = col(N-1) même row  (va à droite)
                 String parent;
-                if (col == 0) {
+                if (col == 0 && row == 0) {
                     parent = namespace + ":root";
+                } else if (col == 0) {
+                    // Cascade : enfant du col0 de la rangée précédente
+                    parent = namespace + ":" + getAdvancementId(row - 1, 0);
                 } else {
-                    int prevIndex = row * size + (col - 1);
-                    parent = namespace + ":" + objectives.get(prevIndex).getId().toLowerCase();
+                    // Chaîne horizontale : enfant de l'item précédent dans la même rangée
+                    parent = namespace + ":" + getAdvancementId(row, col - 1);
                 }
 
-                createObjectiveAdvancement(dataFolder, obj, parent);
+                createObjectiveAdvancement(dataFolder, obj, advId, parent);
                 filesCreated++;
 
-                // Log debug pour les premières lignes
                 if (row < 2) {
-                    BingoPlugin.getInstance().getLogger().info("[Bingo] [" + row + "," + col + "] " + obj.getId().toLowerCase() + " parent=" + parent);
+                    BingoPlugin.getInstance().getLogger().info("[Bingo] [" + row + "," + col + "] " + advId + " (" + obj.getId().toLowerCase() + ") parent=" + parent);
                 }
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] " + filesCreated + " fichiers créés dans " + dataFolder.getAbsolutePath());
-
-        // Vérification : compter les fichiers réellement créés
-        File[] createdFiles = dataFolder.listFiles();
-        if (createdFiles != null) {
-            BingoPlugin.getInstance().getLogger().info("[Bingo] Fichiers sur disque : " + createdFiles.length + " (attendu: " + (filesCreated + 1) + " avec root)");
-        }
+        BingoPlugin.getInstance().getLogger().info("[Bingo] " + filesCreated + " fichiers créés");
 
         // Forcer l'activation du datapack + reload
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             try {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"file/bingo_datapack\"");
             } catch (Exception ignored) {}
-            
+
             Bukkit.reloadData();
-            
             BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack rechargé !");
-            
-            // Forcer les joueurs à re-recevoir les advancements en les kickant gentiment
+
+            // Kick les joueurs pour forcer le reload des advancements côté client
             Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
                 for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
                     p.kickPlayer("§b§lBingo Classique\n\n§eLa grille a été mise à jour !\n§fReconnectez-vous pour voir les changements.");
@@ -120,7 +138,7 @@ public class DatapackManager {
         saveFile(dataFolder, "root.json", json);
     }
 
-    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String parent) {
+    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String advId, String parent) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
         String displayName = obj.getId().replace("_", " ");
         if (!displayName.isEmpty()) {
@@ -132,7 +150,7 @@ public class DatapackManager {
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"" + itemId + "\" },\n" +
                 "    \"title\": \"" + displayName + "\",\n" +
-                "    \"description\": \"Trouve cet objet !\",\n" +
+                "    \"description\": \"Obtenir un(e) " + displayName + "\",\n" +
                 "    \"frame\": \"task\",\n" +
                 "    \"show_toast\": true,\n" +
                 "    \"announce_to_chat\": false,\n" +
@@ -145,7 +163,7 @@ public class DatapackManager {
                 "  }\n" +
                 "}";
 
-        saveFile(dataFolder, obj.getId().toLowerCase() + ".json", json);
+        saveFile(dataFolder, advId + ".json", json);
     }
 
     private void saveFile(File dir, String fileName, String content) {

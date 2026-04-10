@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.inventory.ItemStack;
 import fr.bingo.game.BingoObjective;
+import fr.bingo.game.BingoGrid;
 import java.util.List;
 
 public class BingoListener implements Listener {
@@ -133,14 +134,17 @@ public class BingoListener implements Listener {
         BingoTeam team = teamManager.getPlayerTeam(player);
         if (team == null || team.getName().equals("Spectateur")) return;
 
-        List<BingoObjective> grid = BingoPlugin.getInstance().getBingoGame().getGrid().getObjectives();
-        for (BingoObjective obj : grid) {
+        BingoGrid grid = BingoPlugin.getInstance().getBingoGame().getGrid();
+        List<BingoObjective> objectives = grid.getObjectives();
+        for (int i = 0; i < objectives.size(); i++) {
+            BingoObjective obj = objectives.get(i);
             if (obj.getId().equalsIgnoreCase(objectiveId)) {
                 if (!team.hasUnlocked(objectiveId)) {
-                    team.unlockObjective(objectiveId, BingoPlugin.getInstance().getBingoGame().getGrid().getSize());
+                    team.unlockObjective(objectiveId, grid.getSize());
 
-                    // Sync Datapack (l'advancement devient jaune)
-                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", obj.getId().toLowerCase());
+                    // Sync Datapack — utiliser l'ID positionnel (r0c0, r0c1, etc.)
+                    String advId = fr.bingo.game.DatapackManager.getAdvancementIdFromIndex(i, grid.getSize());
+                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
                     org.bukkit.advancement.Advancement adv = org.bukkit.Bukkit.getAdvancement(key);
                     if (adv != null) {
                         for (java.util.UUID uuid : team.getPlayers()) {
