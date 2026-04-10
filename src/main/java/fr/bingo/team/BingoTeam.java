@@ -115,7 +115,10 @@ public class BingoTeam {
         
         if (!unlockedObjectives.contains(objId)) {
             unlockedObjectives.add(objId);
-            addScore(1); // Utilise addScore pour actualiser lastScoreTime
+            addScore(1);
+            
+            org.bukkit.Bukkit.getLogger().info("[Bingo] " + name + " unlock: " + objId + " (" + unlockedObjectives.size() + "/" + (gridSize * gridSize) + ")");
+            
             checkLinesAndColumns(gridSize);
         }
     }
@@ -123,7 +126,6 @@ public class BingoTeam {
     private void checkLinesAndColumns(int size) {
         java.util.List<fr.bingo.game.BingoObjective> grid = fr.bingo.BingoPlugin.getInstance().getBingoGame().getGrid().getObjectives();
         
-        // Vérification des Lignes et Colonnes
         for (int r = 0; r < size; r++) {
             if (!completedRows.contains(r)) {
                 boolean rowDone = true;
@@ -137,7 +139,7 @@ public class BingoTeam {
                 if (rowDone) {
                     completedRows.add(r);
                     addScore(3);
-                    org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! §aL'équipe " + getName() + " a terminé une ligne complète !");
+                    org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! " + chatColor + "L'équipe " + name + " §ea terminé la ligne " + (r + 1) + " !");
                 }
             }
         }
@@ -155,30 +157,10 @@ public class BingoTeam {
                 if (colDone) {
                     completedCols.add(c);
                     addScore(3);
-                    org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! §aL'équipe " + getName() + " a terminé une colonne complète !");
+                    org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! " + chatColor + "L'équipe " + name + " §ea terminé la colonne " + (c + 1) + " !");
                 }
             }
         }
-
-        // Vérification Blackout (Fin du Bingo total)
-        if (unlockedObjectives.size() == size * size) {
-            this.isFinished = true;
-            this.finishedTime = System.currentTimeMillis();
-            
-            long elap = fr.bingo.BingoPlugin.getInstance().getBingoGame().getElapsedSeconds();
-            long minutes = elap / 60;
-            long secs = elap % 60;
-            String timeFormat = String.format("%02d:%02d", minutes, secs);
-            
-            org.bukkit.Bukkit.broadcastMessage("§6§lBINGO ! §eL'équipe " + getChatColor() + getName() + " §ea terminé le bingo en §b" + timeFormat + " §e!");
-            
-            for(UUID uuid : players) {
-                org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(uuid);
-                if (p != null) {
-                    p.setGameMode(org.bukkit.GameMode.SPECTATOR); // Ils peuvent voler librement
-                    p.sendMessage("§aVous avez terminé ! Vous êtes maintenant en mode spectateur.");
-                }
-            }
-        }
+        // La détection de fin (blackout) est gérée dans BingoListener.checkTeamCompletion
     }
 }

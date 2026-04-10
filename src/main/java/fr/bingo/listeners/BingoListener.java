@@ -188,6 +188,8 @@ public class BingoListener implements Listener {
         int totalObjectives = grid.getObjectives().size();
         int teamFound = team.getUnlockedObjectives().size();
 
+        BingoPlugin.getInstance().getLogger().info("[Bingo] checkTeamCompletion: " + team.getName() + " = " + teamFound + "/" + totalObjectives + " | isFinished=" + team.isFinished());
+
         if (teamFound >= totalObjectives && !team.isFinished()) {
             team.setFinished(true);
 
