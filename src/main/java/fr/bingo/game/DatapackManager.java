@@ -96,7 +96,7 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": \"Bingo Classique\",\n" +
                 "    \"description\": \"Appuyez sur [L] pour voir la grille !\",\n" +
-                "    \"background\": \"minecraft:gui/advancements/backgrounds/stone\",\n" +
+                "    \"background\": \"minecraft:block/purpur_block\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
