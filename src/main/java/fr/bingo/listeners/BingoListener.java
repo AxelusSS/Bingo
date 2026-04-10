@@ -32,7 +32,9 @@ public class BingoListener implements Listener {
 
         if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
             BingoPlugin.getInstance().getBingoGame().teleportToWaitingArea(player);
-            player.sendMessage("§ePensez à rejoindre une équipe avec /team join ou depuis votre inventaire!");
+            // Donner les bannières de sélection d'équipe (clear l'inv d'abord)
+            teamManager.giveTeamBanners(player);
+            player.sendMessage("§e§lBienvenue ! §r§eClic droit sur une bannière pour rejoindre une équipe !");
         }
     }
 
@@ -67,6 +69,43 @@ public class BingoListener implements Listener {
                     }
                     return;
                 }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerInteract(org.bukkit.event.player.PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        
+        // Seulement en WAITING, seulement clic droit
+        if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.WAITING) return;
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_AIR
+            && event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
+        
+        org.bukkit.inventory.ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return;
+        
+        // Vérifier si c'est une bannière de sélection via le tag PDC
+        org.bukkit.persistence.PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_banner");
+        if (!pdc.has(key, org.bukkit.persistence.PersistentDataType.STRING)) return;
+        
+        event.setCancelled(true);
+        
+        String teamName = pdc.get(key, org.bukkit.persistence.PersistentDataType.STRING);
+        TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
+        
+        if (teamManager.isTeamsLocked() && !player.hasPermission("bingo.admin")) {
+            player.sendMessage("§cLes équipes sont verrouillées !");
+            return;
+        }
+        
+        for (BingoTeam team : teamManager.getTeams()) {
+            if (team.getName().equalsIgnoreCase(teamName)) {
+                teamManager.joinTeam(player, team);
+                // Rafraîchir les bannières pour mettre à jour les membres affichés
+                teamManager.giveTeamBanners(player);
+                return;
             }
         }
     }

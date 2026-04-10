@@ -3,12 +3,12 @@ package fr.bingo.game;
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,21 +22,18 @@ public class ScoreboardManager {
     }
 
     private void startUpdateTask() {
-        // Exécuter l'update toutes les secondes (20 ticks)
         Bukkit.getScheduler().runTaskTimer(plugin, this::updateScoreboards, 20L, 20L);
     }
 
     private void updateScoreboards() {
         BingoGame game = plugin.getBingoGame();
         
-        // Formatter le chrono
         long elapsed = game.getElapsedSeconds();
         long minutes = elapsed / 60;
         long secs = elapsed % 60;
         String timeStr = String.format("%02d:%02d", minutes, secs);
         if (game.getState() == GameState.WAITING) timeStr = "En attente";
 
-        // Récupérer et trier les équipes par score (descendant) puis par dernier temps (ascendant)
         List<BingoTeam> sortedTeams = plugin.getTeamManager().getTeams().stream()
                 .filter(t -> !t.getName().equalsIgnoreCase("Spectateur"))
                 .sorted((t1, t2) -> {
@@ -60,10 +57,27 @@ public class ScoreboardManager {
         if (manager == null) return;
 
         Scoreboard board = manager.getNewScoreboard();
+        
+        // ── Enregistrer les équipes pour la couleur dans le TAB ──
+        List<BingoTeam> allTeams = plugin.getTeamManager().getTeams();
+        allTeams.add(plugin.getTeamManager().getSpectatorTeam());
+        for (BingoTeam bt : allTeams) {
+            String teamId = "bg_" + bt.getName().toLowerCase().substring(0, Math.min(bt.getName().length(), 12));
+            org.bukkit.scoreboard.Team sbTeam = board.registerNewTeam(teamId);
+            sbTeam.setColor(bt.getChatColor());
+            sbTeam.setPrefix(bt.getChatColor().toString());
+            // Ajouter les membres
+            for (java.util.UUID uuid : bt.getPlayers()) {
+                org.bukkit.entity.Player p = Bukkit.getPlayer(uuid);
+                if (p != null) sbTeam.addEntry(p.getName());
+            }
+        }
+        allTeams.remove(plugin.getTeamManager().getSpectatorTeam()); // Remettre la liste propre
+
+        // ── Sidebar (scores) ──
         Objective objective = board.registerNewObjective("bingo_board", "dummy", title);
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-        // Scoreboard lit de bas en haut (index dégressif)
         int scoreIndex = linesConfig.size();
 
         for (String line : linesConfig) {
@@ -73,7 +87,6 @@ public class ScoreboardManager {
                 String ph = "{team_" + (i + 1) + "}";
                 if (formatted.contains(ph)) {
                     BingoTeam t = sortedTeams.get(i);
-                    // Ex: "1. Bleu - 12 pts"
                     String teamInfo = "§f" + (i + 1) + ". " + t.getChatColor() + t.getName() + " §7- §b" + t.getScore() + " pts";
                     
                     if (t.isFinished()) {
@@ -84,15 +97,12 @@ public class ScoreboardManager {
                 }
             }
             
-            // Les placeholders de teams qui n'existent pas deviennent vides
             formatted = formatted.replaceAll("\\{team_\\d+\\}", "");
             
-            // Astuce anti-doublon: ajouter des couleurs invisibles a la fin s'il y a des lignes vides
             if (formatted.isEmpty()) {
-                formatted = " ".repeat(Math.max(1, scoreIndex)); // Des espaces pour faire une ligne vide unique
+                formatted = " ".repeat(Math.max(1, scoreIndex));
             }
 
-            // Ne pas afficher plus long que la limite Scoreboard Bukkit 1.21 (illimité en théorie mtn)
             objective.getScore(formatted).setScore(scoreIndex);
             scoreIndex--;
         }

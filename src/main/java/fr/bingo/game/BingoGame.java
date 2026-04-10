@@ -74,14 +74,23 @@ public class BingoGame {
     public void startParty() {
         this.state = GameState.PLAYING;
         this.startTime = System.currentTimeMillis();
-        // Téléportation de tous les joueurs au sol, distribution du matériel de départ, etc.
         World world = waitingPlatformLocation.getWorld();
         Location spawn = world.getHighestBlockAt(0, 0).getLocation().add(0.5, 1, 0.5);
-        for(Player p : Bukkit.getOnlinePlayers()) {
+        
+        for (Player p : Bukkit.getOnlinePlayers()) {
             p.teleport(spawn);
             p.setGameMode(GameMode.SURVIVAL);
-            p.sendMessage("§a§lLA PARTIE COMMENCE ! Que le meilleur gagne !");
+            
+            // Vider l'inventaire (retirer les bannières de sélection)
+            p.getInventory().clear();
+            
+            // Donner 64 steaks cuits
+            p.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.COOKED_BEEF, 64));
+            
+            p.sendMessage("§a§lLA PARTIE COMMENCE ! Bonne chance !");
         }
+        
+        Bukkit.broadcastMessage("§6§l►► BINGO DÉMARRE ! ◄◄ §r§eQue le meilleur gagne !");
     }
 
     public void pauseParty() {

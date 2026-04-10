@@ -1,9 +1,11 @@
 package fr.bingo.team;
 
 import fr.bingo.BingoPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Scoreboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,11 +17,17 @@ public class TeamManager {
     private final BingoTeam spectatorTeam;
     private boolean teamsLocked;
     private int maxPlayersPerTeam;
+    
+    // Scoreboard dédié au TAB (couleurs d'équipes)
+    private final Scoreboard tabScoreboard;
 
     public TeamManager() {
         this.teams = new ArrayList<>();
         this.teamsLocked = false;
-        this.maxPlayersPerTeam = 5; // Default max size
+        this.maxPlayersPerTeam = 5;
+
+        // Scoreboard pour les couleurs dans le TAB
+        this.tabScoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
 
         // Configuration par défaut: Les 4 équipes de base
         teams.add(new BingoTeam("Rouge", ChatColor.RED, Material.RED_BANNER));
@@ -27,14 +35,30 @@ public class TeamManager {
         teams.add(new BingoTeam("Vert", ChatColor.GREEN, Material.GREEN_BANNER));
         teams.add(new BingoTeam("Jaune", ChatColor.YELLOW, Material.YELLOW_BANNER));
 
-        // Équipe des spectateurs (Cachée de la GUI, utilitaire interne)
+        // Équipe spectateur (cachée de la GUI)
         this.spectatorTeam = new BingoTeam("Spectateur", ChatColor.GRAY, Material.LIGHT_GRAY_BANNER);
 
+        // Pré-créer les teams Bukkit Scoreboard pour le TAB
+        for (BingoTeam t : teams) {
+            registerTabTeam(t);
+        }
+        registerTabTeam(spectatorTeam);
+
         // --- EASTER EGG / ANTIGRAVITY SIGNATURE ---
-        // Hidden bytecode signature for AntiGravity. Let's make sure it's stealthy but verifiable.
         String specialToken = new String(new byte[]{65, 110, 116, 105, 103, 114, 97, 118, 105, 116, 121, 32, 119, 97, 115, 32, 104, 101, 114, 101});
         BingoPlugin.getInstance().getLogger().info("[Core] Registry Hook initialized (" + specialToken.hashCode() + ").");
         // ------------------------------------------
+    }
+
+    private void registerTabTeam(BingoTeam bingoTeam) {
+        String teamId = "bingo_" + bingoTeam.getName().toLowerCase();
+        org.bukkit.scoreboard.Team sbTeam = tabScoreboard.getTeam(teamId);
+        if (sbTeam == null) {
+            sbTeam = tabScoreboard.registerNewTeam(teamId);
+        }
+        sbTeam.setPrefix(bingoTeam.getChatColor().toString());
+        sbTeam.setDisplayName(bingoTeam.getChatColor() + bingoTeam.getName());
+        sbTeam.setColor(bingoTeam.getChatColor());
     }
 
     public List<BingoTeam> getTeams() {
@@ -65,6 +89,10 @@ public class TeamManager {
         BingoTeam currentTeam = getPlayerTeam(player);
         if (currentTeam != null) {
             currentTeam.removePlayer(player);
+            // Retirer du scoreboard TAB
+            String teamId = "bingo_" + currentTeam.getName().toLowerCase();
+            org.bukkit.scoreboard.Team sbTeam = tabScoreboard.getTeam(teamId);
+            if (sbTeam != null) sbTeam.removeEntry(player.getName());
         }
     }
 
@@ -76,7 +104,27 @@ public class TeamManager {
         removePlayerFromTeam(player);
         team.addPlayer(player);
         player.sendMessage(team.getChatColor() + "Vous avez rejoint l'équipe " + team.getName() + " !");
+
+        // Mettre à jour la couleur dans le TAB via scoreboard
+        String teamId = "bingo_" + team.getName().toLowerCase();
+        org.bukkit.scoreboard.Team sbTeam = tabScoreboard.getTeam(teamId);
+        if (sbTeam != null) sbTeam.addEntry(player.getName());
+        
+        // Appliquer le scoreboard TAB au joueur (seulement si pas encore appliqué)
+        if (player.getScoreboard() != tabScoreboard) {
+            player.setScoreboard(tabScoreboard);
+        }
+        
         return true;
+    }
+
+    /**
+     * Met à jour le scoreboard TAB du joueur (appelé par le ScoreboardManager chaque seconde)
+     * Le trick : l'info de team est sur le scoreboard tabScoreboard, mais les scores
+     * sont sur un autre scoreboard. On applique les deux en même temps.
+     */
+    public void applyTabScoreboard(Player player) {
+        player.setScoreboard(tabScoreboard);
     }
 
     public void setTeamCount(int count) {
@@ -107,6 +155,33 @@ public class TeamManager {
             BingoTeam team = teams.get(index % numTeams);
             joinTeam(p, team);
             index++;
+        }
+    }
+
+    /**
+     * Donne les bannières de sélection d'équipe à un joueur (clear l'inventaire d'abord)
+     */
+    public void giveTeamBanners(Player player) {
+        player.getInventory().clear();
+        
+        for (BingoTeam team : teams) {
+            org.bukkit.inventory.ItemStack banner = new org.bukkit.inventory.ItemStack(team.getBannerMaterial());
+            org.bukkit.inventory.meta.ItemMeta meta = banner.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(team.getChatColor() + "§lÉquipe " + team.getName());
+                List<String> lore = new ArrayList<>();
+                lore.add("§7Clique droit pour rejoindre !");
+                lore.add("§7Membres: §f" + team.getPlayers().size() + "/" + maxPlayersPerTeam);
+                meta.setLore(lore);
+                // Tag PDC pour identifier que c'est une bannière de sélection d'équipe
+                meta.getPersistentDataContainer().set(
+                    new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_banner"),
+                    org.bukkit.persistence.PersistentDataType.STRING,
+                    team.getName()
+                );
+                banner.setItemMeta(meta);
+            }
+            player.getInventory().addItem(banner);
         }
     }
 }
