@@ -2,13 +2,16 @@ package fr.bingo.game;
 
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
+import fr.bingo.team.TeamManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DatapackManager {
 
@@ -18,25 +21,20 @@ public class DatapackManager {
         return String.format("r%dc%d", row, col);
     }
 
-    /** ID du pont entre item [row,col] et item [row,col+1] */
-    private static String getBridgeId(int row, int col) {
-        return String.format("b%dc%d", row, col);
-    }
-
     public static String getAdvancementIdFromIndex(int index, int gridSize) {
         return getAdvancementId(index / gridSize, index % gridSize);
     }
 
     /**
-     * Génère le datapack avec des ponts entre chaque item.
-     * 
-     * Structure par rangée :
-     *   root(DONE) → item_c0(gris) → bridge_c0(DONE,invisible) → item_c1(gris) → bridge_c1(DONE) → item_c2(gris) → ...
-     * 
-     * Les ponts ont un seul critère tick → auto-complètent → DONE → enfant visible.
-     * Résultat : TOUTE la grille est visible en gris, et passe en or quand trouvé.
+     * Génère le datapack. Tous les items utilisent tick (auto-complète → DONE → visible).
+     * Les items trouvés utilisent frame "challenge" (étoile), les non-trouvés "task" (carré).
+     * Structure simple : col0 = enfant de root, colN = enfant de col(N-1). Pas de bridges.
      */
     public void generateAdvancementsDatapack(BingoGrid grid) {
+        generateAdvancementsDatapack(grid, new HashSet<>());
+    }
+
+    private void generateAdvancementsDatapack(BingoGrid grid, Set<String> foundIds) {
         File dataFolder = getDataFolder();
         if (dataFolder == null) return;
 
@@ -44,16 +42,13 @@ public class DatapackManager {
 
         writePackMcmeta(datapackRoot.getParentFile());
         cleanDirectory(dataFolder);
-
-        // Masquer les onglets vanilla (override les roots → invisible)
         disableVanillaAdvancements(datapackRoot);
-
         createRootAdvancement(dataFolder);
 
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs + ponts pour grille " + size + "x" + size);
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs pour grille " + size + "x" + size);
 
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
@@ -67,119 +62,113 @@ public class DatapackManager {
                 if (col == 0) {
                     parent = namespace + ":root";
                 } else {
-                    parent = namespace + ":" + getBridgeId(row, col - 1);
+                    parent = namespace + ":" + getAdvancementId(row, col - 1);
                 }
 
-                createObjectiveAdvancement(dataFolder, obj, advId, parent);
-
-                if (col < size - 1) {
-                    String bridgeId = getBridgeId(row, col);
-                    String bridgeParent = namespace + ":" + advId;
-                    createBridgeAdvancement(dataFolder, bridgeId, bridgeParent);
-                }
+                boolean isFound = foundIds.contains(obj.getId());
+                createObjectiveAdvancement(dataFolder, obj, advId, parent, isFound);
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Advancements créés.");
+        BingoPlugin.getInstance().getLogger().info("[Bingo] " + objectives.size() + " advancements créés.");
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             enableAndReload();
-
-            // Revoke TOUTES les progressions (reset complet pour éviter les items déjà dorés)
-            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                revokeAllAdvancements();
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.sendMessage("§b§l[Bingo] §aLa grille a été mise à jour ! Appuyez sur §e[L] §aou tapez §e/bg §apour la voir.");
-                }
-            }, 5L);
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage("§b§l[Bingo] §aLa grille a été mise à jour ! Appuyez sur §e[L] §aou tapez §e/bg §apour la voir.");
+            }
         }, 10L);
     }
 
     /**
-     * Marque un objectif comme trouvé → award "found" → passe de GRIS à OR.
+     * Actualise la grille : items trouvés → frame "challenge" (étoile dorée).
+     * Appelé quand un item est trouvé par une équipe.
+     * Debounce intégré pour éviter les reloads multiples.
      */
-    public static void markObjectiveFound(BingoGrid grid, BingoTeam team, String objectiveId) {
+    private static int pendingReloadTask = -1;
+
+    public void refreshFoundItems(BingoGrid grid) {
+        // Collecter tous les objectifs trouvés par n'importe quelle équipe
+        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+        Set<String> foundIds = new HashSet<>();
+        for (BingoTeam team : tm.getTeams()) {
+            foundIds.addAll(team.getUnlockedObjectives());
+        }
+
+        File dataFolder = getDataFolder();
+        if (dataFolder == null) return;
+
+        // Regénérer les fichiers d'advancements
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        for (int i = 0; i < objectives.size(); i++) {
-            if (objectives.get(i).getId().equalsIgnoreCase(objectiveId)) {
-                String advId = getAdvancementIdFromIndex(i, size);
-                org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
+        for (int row = 0; row < size; row++) {
+            for (int col = 0; col < size; col++) {
+                int index = row * size + col;
+                if (index >= objectives.size()) break;
 
-                BingoPlugin.getInstance().getLogger().info("[Bingo] markObjectiveFound: " + objectiveId + " → " + key);
+                BingoObjective obj = objectives.get(index);
+                String advId = getAdvancementId(row, col);
 
-                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-                    if (adv != null) {
-                        for (java.util.UUID uuid : team.getPlayers()) {
-                            Player p = Bukkit.getPlayer(uuid);
-                            if (p != null) {
-                                boolean success = p.getAdvancementProgress(adv).awardCriteria("found");
-                                BingoPlugin.getInstance().getLogger().info("[Bingo] Award 'found' pour " + p.getName() + " sur " + advId + " → " + (success ? "OK" : "ECHEC"));
-                            }
-                        }
-                    } else {
-                        BingoPlugin.getInstance().getLogger().warning("[Bingo] Advancement introuvable: " + key);
-                    }
-                }, 1L);
-                break;
+                String parent;
+                if (col == 0) {
+                    parent = namespace + ":root";
+                } else {
+                    parent = namespace + ":" + getAdvancementId(row, col - 1);
+                }
+
+                boolean isFound = foundIds.contains(obj.getId());
+                createObjectiveAdvancement(dataFolder, obj, advId, parent, isFound);
             }
         }
+
+        // Debounce le reload
+        if (pendingReloadTask != -1) {
+            Bukkit.getScheduler().cancelTask(pendingReloadTask);
+        }
+        pendingReloadTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+            enableAndReload();
+            pendingReloadTask = -1;
+            BingoPlugin.getInstance().getLogger().info("[Bingo] Grille rafraîchie avec les items trouvés.");
+        }, 10L).getTaskId();
     }
 
     // ── Création des fichiers JSON ──
 
     /**
-     * Item de la grille : 1 seul critère "found" (impossible).
-     * La visibilité est assurée par le pont invisible (parent DONE).
-     * Gris par défaut, passe en or quand "found" est award.
-     * PAS de barre de progression (un seul critère = 0/1 → pas affiché).
+     * Crée un advancement pour un objectif.
+     * - Tous utilisent tick (auto-complète → visible d'office)
+     * - Non trouvé: frame "task" (carré doré)
+     * - Trouvé: frame "challenge" (étoile dorée ★) + description verte
      */
-    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String advId, String parent) {
+    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String advId, String parent, boolean found) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
         String displayName = obj.getId().replace("_", " ");
         if (!displayName.isEmpty()) {
             displayName = displayName.substring(0, 1).toUpperCase() + displayName.substring(1);
         }
 
+        String frame = found ? "challenge" : "task";
+        String description = found ? "\\u00a7a\\u2714 Trouvé !" : "Obtenir un(e) " + displayName;
+
         String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"" + itemId + "\" },\n" +
                 "    \"title\": \"" + displayName + "\",\n" +
-                "    \"description\": \"Obtenir un(e) " + displayName + "\",\n" +
-                "    \"frame\": \"task\",\n" +
+                "    \"description\": \"" + description + "\",\n" +
+                "    \"frame\": \"" + frame + "\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
                 "  },\n" +
-                "  \"criteria\": {\n" +
-                "    \"found\": {\n" +
-                "      \"trigger\": \"minecraft:impossible\"\n" +
-                "    }\n" +
-                "  }\n" +
-                "}";
-        saveFile(dataFolder, advId + ".json", json);
-    }
-
-    /**
-     * Pont INVISIBLE entre deux items.
-     * PAS de champ "display" → n'apparaît PAS dans l'arbre d'advancements.
-     * 1 seul critère tick → auto-complète → DONE → le prochain item est visible.
-     * Les enfants se connectent visuellement au plus proche parent affiché.
-     */
-    private void createBridgeAdvancement(File dataFolder, String bridgeId, String parent) {
-        // PAS de "display" → le pont est 100% invisible dans l'onglet advancements
-        String json = "{\n" +
-                "  \"parent\": \"" + parent + "\",\n" +
                 "  \"criteria\": {\n" +
                 "    \"auto\": {\n" +
                 "      \"trigger\": \"minecraft:tick\"\n" +
                 "    }\n" +
                 "  }\n" +
                 "}";
-        saveFile(dataFolder, bridgeId + ".json", json);
+        saveFile(dataFolder, advId + ".json", json);
     }
 
     private void createRootAdvancement(File dataFolder) {
@@ -202,12 +191,9 @@ public class DatapackManager {
         saveFile(dataFolder, "root.json", json);
     }
 
-    /**
-     * Override les roots des onglets vanilla pour les masquer.
-     * Crée des fichiers qui remplacent les advancements vanilla par des versions invisibles.
-     */
+    // ── Vanilla advancements ──
+
     private void disableVanillaAdvancements(File dataRoot) {
-        // Les 5 onglets vanilla à masquer
         String[][] vanillaTabs = {
             {"minecraft", "story/root"},
             {"minecraft", "adventure/root"},
@@ -216,7 +202,6 @@ public class DatapackManager {
             {"minecraft", "end/root"}
         };
 
-        // Advancement sans display = invisible (pas d'onglet créé)
         String hiddenJson = "{\n" +
                 "  \"criteria\": {\n" +
                 "    \"impossible\": {\n" +
@@ -230,34 +215,6 @@ public class DatapackManager {
             if (!dir.exists()) dir.mkdirs();
             saveFile(dir, "root.json", hiddenJson);
         }
-
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Onglets vanilla masqués.");
-    }
-
-    /**
-     * Revoke uniquement les progressions des ITEMS bingo (rXcY).
-     * Ne touche PAS au root ni aux bridges (ils doivent rester DONE pour la visibilité).
-     */
-    private void revokeAllAdvancements() {
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
-            while (it.hasNext()) {
-                org.bukkit.advancement.Advancement adv = it.next();
-                String key = adv.getKey().toString();
-
-                // Ne revoquer que les items bingo (bingoclassique:rXcY)
-                // Ignorer root, ponts (bXcY) et advancements vanilla
-                if (!key.startsWith(namespace + ":r")) continue;
-
-                org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(adv);
-                // Copier pour éviter ConcurrentModificationException
-                java.util.Set<String> awarded = new java.util.HashSet<>(progress.getAwardedCriteria());
-                for (String criteria : awarded) {
-                    progress.revokeCriteria(criteria);
-                }
-            }
-        }
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Progressions des items bingo revoquées.");
     }
 
     // ── Utilitaires ──
