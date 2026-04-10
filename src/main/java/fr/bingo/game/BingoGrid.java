@@ -92,6 +92,16 @@ public class BingoGrid {
         validMaterials.add(Material.SAND);
         validMaterials.add(Material.GRAVEL);
         
+        // Items majeurs de la 1.21 (Tricky Trials)
+        validMaterials.add(Material.BREEZE_ROD);
+        validMaterials.add(Material.TRIAL_KEY);
+        validMaterials.add(Material.OMINOUS_BOTTLE);
+        validMaterials.add(Material.CRAFTER);
+        validMaterials.add(Material.WIND_CHARGE);
+        validMaterials.add(Material.COPPER_BULB);
+        validMaterials.add(Material.CHISELED_TUFF);
+        validMaterials.add(Material.POLISHED_TUFF);
+        
         Collections.shuffle(validMaterials);
         
         int total = size * size;
