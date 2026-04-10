@@ -2,16 +2,13 @@ package fr.bingo.game;
 
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
-import fr.bingo.team.TeamManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class DatapackManager {
 
@@ -21,15 +18,23 @@ public class DatapackManager {
         return String.format("r%dc%d", row, col);
     }
 
+    /** ID du pont entre item [row,col] et item [row,col+1] */
+    private static String getBridgeId(int row, int col) {
+        return String.format("b%dc%d", row, col);
+    }
+
     public static String getAdvancementIdFromIndex(int index, int gridSize) {
         return getAdvancementId(index / gridSize, index % gridSize);
     }
 
     /**
-     * Génère le datapack complet.
-     * Chaque item a 2 critères :
-     *   - "visible" (tick) → s'auto-complète → le client CONNAÎT l'advancement → affiché GRIS
-     *   - "found"   (impossible) → award manuel quand trouvé → passe en OR
+     * Génère le datapack avec des ponts entre chaque item.
+     * 
+     * Structure par rangée :
+     *   root(DONE) → item_c0(gris) → bridge_c0(DONE,invisible) → item_c1(gris) → bridge_c1(DONE) → item_c2(gris) → ...
+     * 
+     * Les ponts ont un seul critère tick → auto-complètent → DONE → enfant visible.
+     * Résultat : TOUTE la grille est visible en gris, et passe en or quand trouvé.
      */
     public void generateAdvancementsDatapack(BingoGrid grid) {
         File dataFolder = getDataFolder();
@@ -42,7 +47,7 @@ public class DatapackManager {
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs pour grille " + size + "x" + size);
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs + ponts pour grille " + size + "x" + size);
 
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
@@ -52,18 +57,30 @@ public class DatapackManager {
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
 
+                // Déterminer le parent de l'item
                 String parent;
                 if (col == 0) {
+                    // Premier item de la rangée → enfant de root
                     parent = namespace + ":root";
                 } else {
-                    parent = namespace + ":" + getAdvancementId(row, col - 1);
+                    // Enfant du PONT précédent (pas de l'item précédent !)
+                    parent = namespace + ":" + getBridgeId(row, col - 1);
                 }
 
+                // Créer l'item (2 critères : visible + found)
                 createObjectiveAdvancement(dataFolder, obj, advId, parent);
+
+                // Créer le pont APRÈS cet item (sauf pour le dernier de la rangée)
+                if (col < size - 1) {
+                    String bridgeId = getBridgeId(row, col);
+                    String bridgeParent = namespace + ":" + advId;
+                    createBridgeAdvancement(dataFolder, bridgeId, bridgeParent);
+                }
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] " + objectives.size() + " advancements créés.");
+        int totalFiles = size * size + (size * (size - 1)); // items + bridges
+        BingoPlugin.getInstance().getLogger().info("[Bingo] " + totalFiles + " fichiers créés (items + ponts).");
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             enableAndReload();
@@ -74,8 +91,7 @@ public class DatapackManager {
     }
 
     /**
-     * Marque un objectif comme trouvé pour tous les joueurs d'une équipe.
-     * Award le critère "found" → l'advancement passe de GRIS à OR.
+     * Marque un objectif comme trouvé → award "found" → passe de GRIS à OR.
      */
     public static void markObjectiveFound(BingoGrid grid, BingoTeam team, String objectiveId) {
         List<BingoObjective> objectives = grid.getObjectives();
@@ -86,7 +102,6 @@ public class DatapackManager {
                 String advId = getAdvancementIdFromIndex(i, size);
                 org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
 
-                // Award "found" pour tous les joueurs de l'équipe → passe en OR
                 Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
                     org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
                     if (adv != null) {
@@ -103,8 +118,12 @@ public class DatapackManager {
         }
     }
 
-    // ── Fichiers JSON ──
+    // ── Création des fichiers JSON ──
 
+    /**
+     * Item de la grille : 2 critères (visible=tick + found=impossible)
+     * Visible d'office grâce au tick, gris tant que "found" n'est pas award.
+     */
     private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String advId, String parent) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
         String displayName = obj.getId().replace("_", " ");
@@ -112,9 +131,6 @@ public class DatapackManager {
             displayName = displayName.substring(0, 1).toUpperCase() + displayName.substring(1);
         }
 
-        // 2 critères :
-        //   "visible" = tick → le client voit l'advancement (gris/dark frame)
-        //   "found"   = impossible → quand on l'award manuellement → frame doré
         String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
@@ -135,12 +151,36 @@ public class DatapackManager {
                 "    }\n" +
                 "  }\n" +
                 "}";
-
         saveFile(dataFolder, advId + ".json", json);
     }
 
+    /**
+     * Pont invisible entre deux items.
+     * 1 seul critère tick → auto-complète → DONE → le prochain item est visible.
+     * L'icône est un verre bleu clair qui se fond dans le fond.
+     */
+    private void createBridgeAdvancement(File dataFolder, String bridgeId, String parent) {
+        String json = "{\n" +
+                "  \"parent\": \"" + parent + "\",\n" +
+                "  \"display\": {\n" +
+                "    \"icon\": { \"id\": \"minecraft:light_blue_stained_glass_pane\" },\n" +
+                "    \"title\": \" \",\n" +
+                "    \"description\": \" \",\n" +
+                "    \"frame\": \"task\",\n" +
+                "    \"show_toast\": false,\n" +
+                "    \"announce_to_chat\": false,\n" +
+                "    \"hidden\": false\n" +
+                "  },\n" +
+                "  \"criteria\": {\n" +
+                "    \"auto\": {\n" +
+                "      \"trigger\": \"minecraft:tick\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        saveFile(dataFolder, bridgeId + ".json", json);
+    }
+
     private void createRootAdvancement(File dataFolder) {
-        // Root : un seul critère tick → se complète immédiatement (OR)
         String json = "{\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
