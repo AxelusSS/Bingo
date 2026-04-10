@@ -71,7 +71,6 @@ public class BingoGrid {
         validMaterials.add(Material.CRYING_OBSIDIAN);
         validMaterials.add(Material.RESPAWN_ANCHOR);
         validMaterials.add(Material.LODESTONE);
-        validMaterials.add(Material.CHAIN);
         validMaterials.add(Material.AMETHYST_SHARD);
         validMaterials.add(Material.SPYGLASS);
         validMaterials.add(Material.TINTED_GLASS);
@@ -103,6 +102,9 @@ public class BingoGrid {
         validMaterials.add(Material.POLISHED_TUFF);
         validMaterials.add(Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE);
         validMaterials.add(Material.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE);
+        
+        // Items majeurs 1.21.11 (Mounts of Mayhem)
+        validMaterials.add(Material.NETHERITE_HORSE_ARMOR);
         
         // Trims (Ornements) célèbres dont la Spire
         validMaterials.add(Material.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE);
