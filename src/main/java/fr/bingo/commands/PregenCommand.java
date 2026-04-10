@@ -77,6 +77,8 @@ public class PregenCommand implements CommandExecutor {
             long[] coords = queue.poll();
             int cx = (int) coords[0];
             int cz = (int) coords[1];
+            
+            final int loopIndex = i;
 
             // Chargement asynchrone Paper API
             world.getChunkAtAsync(cx, cz, true).thenAccept(chunk -> {
@@ -91,7 +93,7 @@ public class PregenCommand implements CommandExecutor {
                 
                 // Si on a terminé le paquet de 5, on rappelle la méthode pour les prochains
                 // via le thread principal de Bukkit (Scheduler) pour relancer l'Asynchrone
-                if (i == 4 || queue.isEmpty()) {
+                if (loopIndex == 4 || queue.isEmpty()) {
                     Bukkit.getScheduler().runTask(BingoPlugin.getInstance(), () -> {
                         processQueue(world, queue, sender);
                     });

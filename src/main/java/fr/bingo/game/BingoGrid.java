@@ -49,7 +49,7 @@ public class BingoGrid {
         validMaterials.add(Material.SPONGE);
         validMaterials.add(Material.HONEYCOMB);
         validMaterials.add(Material.HONEY_BOTTLE);
-        validMaterials.add(Material.SCUTE);
+        validMaterials.add(Material.TURTLE_SCUTE);
         validMaterials.add(Material.TURTLE_HELMET);
         validMaterials.add(Material.HEART_OF_THE_SEA);
         validMaterials.add(Material.NAUTILUS_SHELL);
