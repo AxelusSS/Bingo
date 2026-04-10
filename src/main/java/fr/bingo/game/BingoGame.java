@@ -93,6 +93,9 @@ public class BingoGame {
             this.state = GameState.PLAYING;
             this.startTime = System.currentTimeMillis();
 
+            // Verrouiller les équipes
+            BingoPlugin.getInstance().getTeamManager().setTeamsLocked(true);
+
             World world = Bukkit.getWorlds().get(0);
 
             // Gamerules : jour éternel + pas d'annonces d'advancements
