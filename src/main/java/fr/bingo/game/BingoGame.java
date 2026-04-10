@@ -85,7 +85,7 @@ public class BingoGame {
                     p.sendTitle(color + count, "§7Préparez-vous...", 0, 25, 5);
                     p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 1f);
                 }
-            }, (5 - count) * 20L); // 1 seconde = 20 ticks
+            }, (5 - count) * 20L);
         }
 
         // GO ! (après 5 secondes)
@@ -93,20 +93,46 @@ public class BingoGame {
             this.state = GameState.PLAYING;
             this.startTime = System.currentTimeMillis();
 
-            World world = waitingPlatformLocation.getWorld();
-            Location spawn = world.getHighestBlockAt(0, 0).getLocation().add(0.5, 1, 0.5);
-
             for (Player p : Bukkit.getOnlinePlayers()) {
                 p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
                 p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
-                p.teleport(spawn);
                 p.setGameMode(GameMode.SURVIVAL);
                 p.getInventory().clear();
                 p.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.COOKED_BEEF, 64));
+
+                // Invincibilité pendant la chute (10 secondes)
+                p.setInvulnerable(true);
             }
 
+            // Casser toute la plateforme (verre + barriers)
+            destroyWaitingPlatform();
+
+            // Retirer l'invincibilité après 10 secondes (temps de toucher le sol)
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.setInvulnerable(false);
+                }
+            }, 200L); // 10 secondes
+
             Bukkit.broadcastMessage("§6§l►► BINGO DÉMARRE ! ◄◄ §r§eQue le meilleur gagne !");
-        }, 5 * 20L); // 100 ticks = 5 secondes
+        }, 5 * 20L);
+    }
+
+    /**
+     * Détruit la plateforme d'attente (verre + barriers → air).
+     */
+    private void destroyWaitingPlatform() {
+        World world = waitingPlatformLocation.getWorld();
+        int y = 250;
+        for (int x = -10; x <= 10; x++) {
+            for (int z = -10; z <= 10; z++) {
+                world.getBlockAt(x, y, z).setType(Material.AIR);
+                // Murs
+                for (int wallY = 1; wallY <= 3; wallY++) {
+                    world.getBlockAt(x, y + wallY, z).setType(Material.AIR);
+                }
+            }
+        }
     }
 
     public void pauseParty() {
