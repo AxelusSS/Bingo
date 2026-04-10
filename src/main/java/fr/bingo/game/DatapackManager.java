@@ -23,7 +23,7 @@ public class DatapackManager {
         }
 
         try (FileWriter writer = new FileWriter(new File(datapackFolder, "pack.mcmeta"))) {
-            writer.write("{ \"pack\": { \"pack_format\": 48, \"description\": \"Bingo Advancements\" } }");
+            writer.write("{ \"pack\": { \"pack_format\": 71, \"supported_formats\": [48, 71], \"description\": \"Bingo Advancements\" } }");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -34,13 +34,7 @@ public class DatapackManager {
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        // Stratégie de chaînage pour obtenir une vraie grille NxN :
-        // - L'item (row, 0) est enfant de root → s'empile verticalement sous root
-        // - L'item (row, col) est enfant de (row, col-1) → s'étend horizontalement
-        // Résultat visuel MC :
-        //   [root] [r0c0] [r0c1] [r0c2] ...
-        //          [r1c0] [r1c1] [r1c2] ...
-        //          [r2c0] [r2c1] [r2c2] ...
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs pour grille " + size + "x" + size);
 
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
@@ -61,8 +55,27 @@ public class DatapackManager {
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("Datapack généré ! Taille: " + size + "x" + size);
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack généré avec succès ! " + objectives.size() + " advancements créés.");
+        
+        // Forcer le rechargement du datapack
         Bukkit.reloadData();
+        
+        // Révoquer les anciens advancements de tous les joueurs
+        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+            for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
+                for (BingoObjective obj : objectives) {
+                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, obj.getId().toLowerCase());
+                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+                    if (adv != null) {
+                        org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(adv);
+                        for (String criteria : progress.getAwardedCriteria()) {
+                            progress.revokeCriteria(criteria);
+                        }
+                    }
+                }
+            }
+            BingoPlugin.getInstance().getLogger().info("[Bingo] Advancements réinitialisés pour tous les joueurs.");
+        }, 20L);
     }
 
     private void cleanDirectory(File folder) {
@@ -77,13 +90,13 @@ public class DatapackManager {
     }
 
     private void createRootAdvancement(File dataFolder) {
-        // On utilise un fond vanilla valide (stone = texture qui existe à coup sûr)
+        // Format 1.21+ : pas de "textures/" ni ".png"
         String json = "{\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": \"Bingo Classique\",\n" +
                 "    \"description\": \"Appuyez sur [L] pour voir la grille !\",\n" +
-                "    \"background\": \"minecraft:textures/gui/advancements/backgrounds/adventure.png\",\n" +
+                "    \"background\": \"minecraft:gui/advancements/backgrounds/stone\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +

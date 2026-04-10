@@ -129,7 +129,7 @@ public class TeamCommand implements CommandExecutor {
                 String targetTeamName = args[2];
                 for (BingoTeam t : teamManager.getTeams()) {
                     if (t.getName().equalsIgnoreCase(targetTeamName)) {
-                        teamManager.joinTeam(target, t); // Force join bypassed UI restrictions if needed
+                        teamManager.forceJoinTeam(target, t);
                         player.sendMessage("§aJoueur assigné !");
                         return true;
                     }

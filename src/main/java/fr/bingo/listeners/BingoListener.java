@@ -105,6 +105,27 @@ public class BingoListener implements Listener {
         }
     }
 
+    // ── Pas de PvP tant que la partie n'est pas lancée ──
+    @EventHandler
+    public void onEntityDamageByEntity(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.PLAYING) {
+            if (event.getEntity() instanceof Player && event.getDamager() instanceof Player) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    // ── Pas de faim / pas de mort de faim ──
+    @EventHandler
+    public void onFoodLevelChange(org.bukkit.event.entity.FoodLevelChangeEvent event) {
+        // Empêcher la perte de faim (maintenir toujours à 20)
+        if (event.getEntity() instanceof Player) {
+            event.setCancelled(true);
+            ((Player) event.getEntity()).setFoodLevel(20);
+            ((Player) event.getEntity()).setSaturation(20f);
+        }
+    }
+
     private void checkObjective(Player player, String objectiveId) {
         if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.PLAYING) return;
 

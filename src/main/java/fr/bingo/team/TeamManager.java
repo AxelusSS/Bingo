@@ -67,6 +67,11 @@ public class TeamManager {
     }
 
     public boolean joinTeam(Player player, BingoTeam team) {
+        // Le lock bloque tout le monde (sauf via /team set qui utilise forceJoinTeam)
+        if (teamsLocked && team != spectatorTeam) {
+            player.sendMessage("§cLes équipes sont verrouillées !");
+            return false;
+        }
         if (team != spectatorTeam && team.getPlayers().size() >= maxPlayersPerTeam) {
             player.sendMessage("§cCette équipe est déjà pleine ! (" + maxPlayersPerTeam + " joueurs max)");
             return false;
@@ -74,6 +79,16 @@ public class TeamManager {
         removePlayerFromTeam(player);
         team.addPlayer(player);
         player.sendMessage(team.getChatColor() + "Vous avez rejoint l'équipe " + team.getName() + " !");
+        return true;
+    }
+
+    /**
+     * Force un joueur dans une équipe (bypass le lock) — utilisé par /team set uniquement
+     */
+    public boolean forceJoinTeam(Player player, BingoTeam team) {
+        removePlayerFromTeam(player);
+        team.addPlayer(player);
+        player.sendMessage(team.getChatColor() + "Vous avez été assigné à l'équipe " + team.getName() + " !");
         return true;
     }
 
@@ -103,7 +118,7 @@ public class TeamManager {
         int index = 0;
         for (Player p : shuffled) {
             BingoTeam team = teams.get(index % numTeams);
-            joinTeam(p, team);
+            forceJoinTeam(p, team);
             index++;
         }
     }
