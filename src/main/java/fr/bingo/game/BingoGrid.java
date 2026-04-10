@@ -96,7 +96,7 @@ public class BingoGrid {
         validMaterials.add(Material.FLOWER_POT);
         validMaterials.add(Material.DRIED_KELP_BLOCK);
         validMaterials.add(Material.LANTERN);
-        validMaterials.add(Material.CHAIN);
+        validMaterials.add(Material.SOUL_LANTERN);
         validMaterials.add(Material.BREAD);
         validMaterials.add(Material.COOKIE);
         validMaterials.add(Material.PUMPKIN_PIE);

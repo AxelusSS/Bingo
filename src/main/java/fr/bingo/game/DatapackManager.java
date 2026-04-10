@@ -40,8 +40,14 @@ public class DatapackManager {
         File dataFolder = getDataFolder();
         if (dataFolder == null) return;
 
-        writePackMcmeta(dataFolder.getParentFile());
+        File datapackRoot = dataFolder.getParentFile().getParentFile(); // data/
+
+        writePackMcmeta(datapackRoot.getParentFile());
         cleanDirectory(dataFolder);
+
+        // Masquer les onglets vanilla (override les roots → invisible)
+        disableVanillaAdvancements(datapackRoot);
+
         createRootAdvancement(dataFolder);
 
         List<BingoObjective> objectives = grid.getObjectives();
@@ -57,20 +63,15 @@ public class DatapackManager {
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
 
-                // Déterminer le parent de l'item
                 String parent;
                 if (col == 0) {
-                    // Premier item de la rangée → enfant de root
                     parent = namespace + ":root";
                 } else {
-                    // Enfant du PONT précédent (pas de l'item précédent !)
                     parent = namespace + ":" + getBridgeId(row, col - 1);
                 }
 
-                // Créer l'item (2 critères : visible + found)
                 createObjectiveAdvancement(dataFolder, obj, advId, parent);
 
-                // Créer le pont APRÈS cet item (sauf pour le dernier de la rangée)
                 if (col < size - 1) {
                     String bridgeId = getBridgeId(row, col);
                     String bridgeParent = namespace + ":" + advId;
@@ -79,14 +80,18 @@ public class DatapackManager {
             }
         }
 
-        int totalFiles = size * size + (size * (size - 1)); // items + bridges
-        BingoPlugin.getInstance().getLogger().info("[Bingo] " + totalFiles + " fichiers créés (items + ponts).");
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Advancements créés.");
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             enableAndReload();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.sendMessage("§b§l[Bingo] §aLa grille a été mise à jour ! Appuyez sur §e[L] §aou tapez §e/bg §apour la voir.");
-            }
+
+            // Revoke TOUTES les progressions (reset complet pour éviter les items déjà dorés)
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                revokeAllAdvancements();
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.sendMessage("§b§l[Bingo] §aLa grille a été mise à jour ! Appuyez sur §e[L] §aou tapez §e/bg §apour la voir.");
+                }
+            }, 5L);
         }, 10L);
     }
 
@@ -190,6 +195,57 @@ public class DatapackManager {
                 "  }\n" +
                 "}";
         saveFile(dataFolder, "root.json", json);
+    }
+
+    /**
+     * Override les roots des onglets vanilla pour les masquer.
+     * Crée des fichiers qui remplacent les advancements vanilla par des versions invisibles.
+     */
+    private void disableVanillaAdvancements(File dataRoot) {
+        // Les 5 onglets vanilla à masquer
+        String[][] vanillaTabs = {
+            {"minecraft", "story/root"},
+            {"minecraft", "adventure/root"},
+            {"minecraft", "husbandry/root"},
+            {"minecraft", "nether/root"},
+            {"minecraft", "end/root"}
+        };
+
+        // Advancement sans display = invisible (pas d'onglet créé)
+        String hiddenJson = "{\n" +
+                "  \"criteria\": {\n" +
+                "    \"impossible\": {\n" +
+                "      \"trigger\": \"minecraft:impossible\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+
+        for (String[] tab : vanillaTabs) {
+            File dir = new File(dataRoot, tab[0] + "/advancement/" + tab[1].substring(0, tab[1].lastIndexOf('/')));
+            if (!dir.exists()) dir.mkdirs();
+            saveFile(dir, "root.json", hiddenJson);
+        }
+
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Onglets vanilla masqués.");
+    }
+
+    /**
+     * Revoke TOUTE la progression de TOUS les advancements pour TOUS les joueurs.
+     * Garantit un affichage propre (pas d'items dorés fantômes).
+     */
+    private void revokeAllAdvancements() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            // Revoke TOUS les advancements connus du serveur
+            java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
+            while (it.hasNext()) {
+                org.bukkit.advancement.Advancement adv = it.next();
+                org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(adv);
+                for (String criteria : progress.getAwardedCriteria()) {
+                    progress.revokeCriteria(criteria);
+                }
+            }
+        }
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Progressions revoquées pour tous les joueurs.");
     }
 
     // ── Utilitaires ──
