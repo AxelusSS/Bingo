@@ -1,0 +1,16 @@
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\BingoPlugin.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\commands\BingoCommand.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\commands\PregenCommand.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\commands\TeamCommand.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\database\DatabaseManager.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoGame.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoGrid.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoObjective.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\DatapackManager.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\GameState.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\ScoreboardManager.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\BingoGridGUI.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\TeamSelectorGUI.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\listeners\BingoListener.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\team\BingoTeam.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\team\TeamManager.java

@@ -1,0 +1,34 @@
+# ==========================================
+#        Bingo - Configuration Principale
+# ==========================================
+
+database:
+  # Type de base de donnée : sqlite ou mysql
+  type: "sqlite"
+  
+  # Si mysql est choisi, remplir les infos suivantes :
+  host: "127.0.0.1"
+  port: 3306
+  database: "bingo_db"
+  username: "root"
+  password: ""
+
+game:
+  default_game_time: 120 # en minutes
+  default_teams_count: 4
+  announce_in_chat: true
+  pregen_radius: 500
+
+scoreboard:
+  title: "§6§lBINGO CLASSIQUE"
+  lines:
+    - "§8------------------"
+    - "§fChrono: §b{time}"
+    - ""
+    - "{team_1}"
+    - "{team_2}"
+    - "{team_3}"
+    - "{team_4}"
+    - "{team_5}"
+    - "§8------------------"
+    - "§eplay.monbingo.fr"

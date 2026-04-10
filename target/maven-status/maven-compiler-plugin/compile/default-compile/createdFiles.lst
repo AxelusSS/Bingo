@@ -1,0 +1,5 @@
+fr\bingo\game\GameState.class
+fr\bingo\BingoPlugin.class
+fr\bingo\game\BingoGame.class
+fr\bingo\database\DatabaseManager.class
+fr\bingo\team\TeamManager.class

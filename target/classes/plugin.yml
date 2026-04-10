@@ -1,0 +1,24 @@
+name: BingoTheGuill
+version: 1.0
+main: fr.bingo.BingoPlugin
+api-version: 1.21
+authors: [Antigravity, TheGuill84 Community]
+description: Un plugin reproduisant le mode de jeu Bingo de TheGuill84.
+
+commands:
+  bingo:
+    description: Commande principale du Bingo (UI, Set, Time, Gen)
+  bo:
+    description: Alias pour bingo open
+  bs:
+    description: Alias pour bingo size
+  tj:
+    description: Alias pour team join
+  pregen:
+    description: Generer la carte a lacance
+  team:
+    description: Gestion des équipes
+  party:
+    description: Commande pour lancer ou mettre en pause la partie
+    description: Pré-générer les chunks 
+    permission: bingo.admin
