@@ -3,12 +3,12 @@ package fr.bingo.game;
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +27,7 @@ public class ScoreboardManager {
 
     private void updateScoreboards() {
         BingoGame game = plugin.getBingoGame();
-        
+
         long elapsed = game.getElapsedSeconds();
         long minutes = elapsed / 60;
         long secs = elapsed % 60;
@@ -57,24 +57,24 @@ public class ScoreboardManager {
         if (manager == null) return;
 
         Scoreboard board = manager.getNewScoreboard();
-        
-        // ── Enregistrer les équipes pour la couleur dans le TAB ──
-        List<BingoTeam> allTeams = plugin.getTeamManager().getTeams();
+
+        // ── TAB : Enregistrer les équipes pour colorer les noms ──
+        // On fait une copie de la liste pour ne pas modifier l'originale
+        List<BingoTeam> allTeams = new ArrayList<>(plugin.getTeamManager().getTeams());
         allTeams.add(plugin.getTeamManager().getSpectatorTeam());
+
         for (BingoTeam bt : allTeams) {
             String teamId = "bg_" + bt.getName().toLowerCase().substring(0, Math.min(bt.getName().length(), 12));
             org.bukkit.scoreboard.Team sbTeam = board.registerNewTeam(teamId);
             sbTeam.setColor(bt.getChatColor());
             sbTeam.setPrefix(bt.getChatColor().toString());
-            // Ajouter les membres
             for (java.util.UUID uuid : bt.getPlayers()) {
                 org.bukkit.entity.Player p = Bukkit.getPlayer(uuid);
                 if (p != null) sbTeam.addEntry(p.getName());
             }
         }
-        allTeams.remove(plugin.getTeamManager().getSpectatorTeam()); // Remettre la liste propre
 
-        // ── Sidebar (scores) ──
+        // ── Sidebar ──
         Objective objective = board.registerNewObjective("bingo_board", "dummy", title);
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
@@ -88,7 +88,7 @@ public class ScoreboardManager {
                 if (formatted.contains(ph)) {
                     BingoTeam t = sortedTeams.get(i);
                     String teamInfo = "§f" + (i + 1) + ". " + t.getChatColor() + t.getName() + " §7- §b" + t.getScore() + " pts";
-                    
+
                     if (t.isFinished()) {
                         long elapsedSec = (t.getFinishedTime() - plugin.getBingoGame().getStartTime()) / 1000;
                         teamInfo += " §e[" + String.format("%02d:%02d", elapsedSec / 60, elapsedSec % 60) + "]";
@@ -96,9 +96,9 @@ public class ScoreboardManager {
                     formatted = formatted.replace(ph, teamInfo);
                 }
             }
-            
+
             formatted = formatted.replaceAll("\\{team_\\d+\\}", "");
-            
+
             if (formatted.isEmpty()) {
                 formatted = " ".repeat(Math.max(1, scoreIndex));
             }
