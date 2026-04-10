@@ -52,9 +52,8 @@ public class DatapackManager {
 
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
-                String parent = col == 0
-                        ? namespace + ":root"
-                        : namespace + ":" + getAdvancementId(row, col - 1);
+                // TOUS enfants directs de root → root est DONE → tous visibles
+                String parent = namespace + ":root";
 
                 createItemAdvancement(dataFolder, obj, advId, parent);
             }
