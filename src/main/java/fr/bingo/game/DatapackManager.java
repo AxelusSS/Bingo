@@ -109,16 +109,20 @@ public class DatapackManager {
      * - requirements: [["found"]] → PAS de barre de progression
      */
     private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent) {
-        String itemId = "minecraft:" + obj.getId().toLowerCase();
-        String name = obj.getId().replace("_", " ");
+        String iconId = "minecraft:" + obj.getDisplayMaterial().name().toLowerCase();
+        String name = obj.getId().replace("_", " ").replace("/", " > ");
         if (!name.isEmpty()) name = name.substring(0, 1).toUpperCase() + name.substring(1);
+
+        String desc = obj.isAchievement()
+                ? "\\u00a7d[Achievement] " + name
+                : "Obtenir un(e) " + name;
 
         String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
-                "    \"icon\": { \"id\": \"" + itemId + "\" },\n" +
+                "    \"icon\": { \"id\": \"" + iconId + "\" },\n" +
                 "    \"title\": \"" + name + "\",\n" +
-                "    \"description\": \"Obtenir un(e) " + name + "\",\n" +
+                "    \"description\": \"" + desc + "\",\n" +
                 "    \"frame\": \"task\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +

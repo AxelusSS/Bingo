@@ -6,10 +6,14 @@ C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\commands
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\database\DatabaseManager.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoGame.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoGrid.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoMode.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoObjective.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\BingoObjectivePool.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\DatapackManager.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\Difficulty.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\GameState.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\ScoreboardManager.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\AdminConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\BingoGridGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\TeamSelectorGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\listeners\BingoListener.java

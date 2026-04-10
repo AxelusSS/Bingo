@@ -96,6 +96,10 @@ public class BingoTeam {
         this.lastScoreTime = System.currentTimeMillis();
     }
 
+    public void setScore(int score) {
+        this.score = score;
+    }
+
     public void resetScore() {
         this.score = 0;
         this.lastScoreTime = 0;

@@ -1,11 +1,12 @@
 package fr.bingo.listeners;
 
 import fr.bingo.BingoPlugin;
-import fr.bingo.game.GameState;
+import fr.bingo.game.*;
+import fr.bingo.gui.AdminConfigGUI;
 import fr.bingo.gui.TeamSelectorGUI;
 import fr.bingo.team.BingoTeam;
 import fr.bingo.team.TeamManager;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,9 +15,9 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import fr.bingo.game.BingoObjective;
-import fr.bingo.game.BingoGrid;
+
 import java.util.List;
 
 public class BingoListener implements Listener {
@@ -33,43 +34,53 @@ public class BingoListener implements Listener {
         if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
             BingoPlugin.getInstance().getBingoGame().teleportToWaitingArea(player);
             teamManager.giveTeamBanners(player);
+
+            // Donner le compas admin
+            if (player.hasPermission("bingo.admin")) {
+                BingoGame.giveAdminCompass(player);
+            }
+
             startActionBarReminder(player);
         }
     }
 
-    /**
-     * Affiche un message action bar en boucle tant que le joueur est dans l'équipe Spectateur.
-     * Se stoppe automatiquement quand il rejoint une vraie équipe ou que la game démarre.
-     */
     private void startActionBarReminder(Player player) {
-        int taskId = org.bukkit.Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), () -> {
+        Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), () -> {
             if (!player.isOnline()) return;
-
-            // Arrêter si la game a démarré
             if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.WAITING) return;
 
             TeamManager tm = BingoPlugin.getInstance().getTeamManager();
-            fr.bingo.team.BingoTeam team = tm.getPlayerTeam(player);
+            BingoTeam team = tm.getPlayerTeam(player);
 
-            // Afficher seulement si le joueur est spectateur (pas encore dans une team)
             if (team == null || team.getName().equals("Spectateur")) {
                 player.spigot().sendMessage(
                     net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
                     net.md_5.bungee.api.chat.TextComponent.fromLegacy("§b§l⚑ Choisis ton équipe dans l'inventaire ⚑")
                 );
             }
-        }, 0L, 30L).getTaskId(); // Toutes les 1.5 secondes
+        }, 0L, 30L);
     }
+
+    // ── Clic inventaire ──
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
-        // ── GUI Team Selector (ancien /team menu) ──
+        // GUI Grille Bingo
         if (event.getInventory().getHolder() instanceof fr.bingo.gui.BingoGridGUI) {
             event.setCancelled(true);
             return;
         }
+
+        // GUI Admin Config
+        if (event.getInventory().getHolder() instanceof AdminConfigGUI gui) {
+            event.setCancelled(true);
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // GUI Team Selector
         if (event.getInventory().getHolder() instanceof TeamSelectorGUI) {
             event.setCancelled(true);
             if (event.getCurrentItem() == null || event.getCurrentItem().getType() == Material.AIR) return;
@@ -90,7 +101,7 @@ public class BingoListener implements Listener {
             }
         }
 
-        // ── Clic sur bannière PDC dans l'inventaire du joueur ──
+        // Clic bannière PDC
         if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.WAITING) return;
         if (event.getCurrentItem() == null || !event.getCurrentItem().hasItemMeta()) return;
 
@@ -98,8 +109,7 @@ public class BingoListener implements Listener {
         org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_banner");
         if (!pdc.has(key, org.bukkit.persistence.PersistentDataType.STRING)) return;
 
-        event.setCancelled(true); // Empêcher de déplacer la bannière
-
+        event.setCancelled(true);
         String teamName = pdc.get(key, org.bukkit.persistence.PersistentDataType.STRING);
         TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
 
@@ -111,14 +121,33 @@ public class BingoListener implements Listener {
         for (BingoTeam team : teamManager.getTeams()) {
             if (team.getName().equalsIgnoreCase(teamName)) {
                 teamManager.joinTeam(player, team);
-                // Rafraîchir les bannières (mise à jour du nombre de membres)
                 teamManager.giveTeamBanners(player);
                 return;
             }
         }
     }
 
-    // ── Empêcher les joueurs en WAITING de drop/déplacer les bannières ──
+    // ── Clic droit compas admin ──
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        if (event.getItem() == null || !event.getItem().hasItemMeta()) return;
+        if (!event.getAction().name().contains("RIGHT")) return;
+
+        org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "admin_compass");
+        if (event.getItem().getItemMeta().getPersistentDataContainer().has(key, org.bukkit.persistence.PersistentDataType.BOOLEAN)) {
+            event.setCancelled(true);
+            if (!player.hasPermission("bingo.admin")) {
+                player.sendMessage("§cPermission refusée.");
+                return;
+            }
+            player.openInventory(new AdminConfigGUI().getInventory());
+        }
+    }
+
+    // ── Protection gameplay ──
+
     @EventHandler
     public void onItemDrop(org.bukkit.event.player.PlayerDropItemEvent event) {
         if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
@@ -126,7 +155,6 @@ public class BingoListener implements Listener {
         }
     }
 
-    // ── Pas de PvP tant que la partie n'est pas lancée ──
     @EventHandler
     public void onEntityDamageByEntity(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
         if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.PLAYING) {
@@ -136,17 +164,18 @@ public class BingoListener implements Listener {
         }
     }
 
-    // ── Pas de faim en attente seulement ──
     @EventHandler
     public void onFoodLevelChange(org.bukkit.event.entity.FoodLevelChangeEvent event) {
         if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
-            if (event.getEntity() instanceof Player) {
+            if (event.getEntity() instanceof Player p) {
                 event.setCancelled(true);
-                ((Player) event.getEntity()).setFoodLevel(20);
-                ((Player) event.getEntity()).setSaturation(20f);
+                p.setFoodLevel(20);
+                p.setSaturation(20f);
             }
         }
     }
+
+    // ── Détection d'objectifs ──
 
     private void checkObjective(Player player, String objectiveId) {
         if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.PLAYING) return;
@@ -164,14 +193,18 @@ public class BingoListener implements Listener {
                     team.unlockObjective(objectiveId, grid.getSize());
 
                     // Award "found" per-player (uniquement cette équipe voit l'or)
-                    fr.bingo.game.DatapackManager.markObjectiveFound(grid, team, objectiveId);
+                    DatapackManager.markObjectiveFound(grid, team, objectiveId);
 
-                    player.getServer().broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §aa trouvé §e" + obj.getId().replace("_", " ") + " §a!");
+                    String displayName = obj.getId().replace("_", " ");
+                    String prefix = obj.isAchievement() ? "§d[Achievement] " : "";
+                    player.getServer().broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §aa trouvé " + prefix + "§e" + displayName + " §a!");
+
+                    // Sons & effets
+                    playFoundEffects(player, team);
 
                     int seconds = (int) BingoPlugin.getInstance().getBingoGame().getElapsedSeconds();
                     BingoPlugin.getInstance().getDatabaseManager().recordStat(player.getName(), seconds, objectiveId);
 
-                    // Vérifier si l'équipe a tout trouvé
                     checkTeamCompletion(team, grid);
                 }
                 break;
@@ -179,16 +212,23 @@ public class BingoListener implements Listener {
         }
     }
 
-    /**
-     * Vérifie si l'équipe a trouvé tous les objectifs.
-     * Si oui → mode spectateur + message avec le temps.
-     * Si toutes les équipes ont fini → fin de la partie.
-     */
+    private void playFoundEffects(Player player, BingoTeam team) {
+        // Son pour toute l'équipe
+        for (java.util.UUID uuid : team.getPlayers()) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null) {
+                p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.5f);
+                // Particules autour du joueur qui a trouvé
+                p.spawnParticle(Particle.HAPPY_VILLAGER, player.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5);
+            }
+        }
+    }
+
+    // ── Fin de partie ──
+
     private void checkTeamCompletion(BingoTeam team, BingoGrid grid) {
         int totalObjectives = grid.getObjectives().size();
         int teamFound = team.getUnlockedObjectives().size();
-
-        BingoPlugin.getInstance().getLogger().info("[Bingo] checkTeamCompletion: " + team.getName() + " = " + teamFound + "/" + totalObjectives + " | isFinished=" + team.isFinished());
 
         if (teamFound >= totalObjectives && !team.isFinished()) {
             team.setFinished(true);
@@ -198,54 +238,63 @@ public class BingoListener implements Listener {
             int sec = (int) (elapsed % 60);
             String timeStr = String.format("%02d:%02d", min, sec);
 
-            // Annonce dans le chat
-            org.bukkit.Bukkit.broadcastMessage("");
-            org.bukkit.Bukkit.broadcastMessage("§8§m                                                §r");
-            org.bukkit.Bukkit.broadcastMessage("  " + team.getChatColor() + "§l★ L'équipe " + team.getName() + " a terminé le Bingo ! ★");
-            org.bukkit.Bukkit.broadcastMessage("  §7Temps : §e§l" + timeStr);
-            org.bukkit.Bukkit.broadcastMessage("§8§m                                                §r");
-            org.bukkit.Bukkit.broadcastMessage("");
+            Bukkit.broadcastMessage("");
+            Bukkit.broadcastMessage("§8§m                                                §r");
+            Bukkit.broadcastMessage("  " + team.getChatColor() + "§l★ L'équipe " + team.getName() + " a terminé le Bingo ! ★");
+            Bukkit.broadcastMessage("  §7Temps : §e§l" + timeStr);
+            Bukkit.broadcastMessage("§8§m                                                §r");
+            Bukkit.broadcastMessage("");
 
-            // Passer les membres en spectateur
             for (java.util.UUID uuid : team.getPlayers()) {
-                Player p = org.bukkit.Bukkit.getPlayer(uuid);
+                Player p = Bukkit.getPlayer(uuid);
                 if (p != null) {
-                    p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+                    p.setGameMode(GameMode.SPECTATOR);
                     p.sendTitle(team.getChatColor() + "§lBINGO !", "§7Temps : §e" + timeStr, 10, 60, 20);
+                    // Feu d'artifice !
+                    launchFirework(p.getLocation());
                 }
             }
 
-            // Vérifier si TOUTES les équipes (non-spectateur) ont fini
             checkAllTeamsFinished();
         }
     }
 
-    /**
-     * Si toutes les équipes ont fini → fin de la partie.
-     */
+    private void launchFirework(Location loc) {
+        org.bukkit.entity.Firework fw = loc.getWorld().spawn(loc, org.bukkit.entity.Firework.class);
+        org.bukkit.inventory.meta.FireworkMeta meta = fw.getFireworkMeta();
+        meta.addEffect(org.bukkit.FireworkEffect.builder()
+                .withColor(Color.YELLOW, Color.ORANGE)
+                .withFade(Color.RED)
+                .with(org.bukkit.FireworkEffect.Type.STAR)
+                .flicker(true)
+                .trail(true)
+                .build());
+        meta.setPower(1);
+        fw.setFireworkMeta(meta);
+    }
+
     private void checkAllTeamsFinished() {
         TeamManager tm = BingoPlugin.getInstance().getTeamManager();
         boolean allDone = true;
 
         for (BingoTeam t : tm.getTeams()) {
             if (t.getName().equals("Spectateur")) continue;
-            if (t.getPlayers().isEmpty()) continue; // Ignorer les équipes vides
-            if (!t.isFinished()) {
-                allDone = false;
-                break;
-            }
+            if (t.getPlayers().isEmpty()) continue;
+            if (!t.isFinished()) { allDone = false; break; }
         }
 
         if (allDone) {
-            org.bukkit.Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                org.bukkit.Bukkit.broadcastMessage("");
-                org.bukkit.Bukkit.broadcastMessage("§6§l✦✦✦ TOUTES LES ÉQUIPES ONT TERMINÉ ! ✦✦✦");
-                org.bukkit.Bukkit.broadcastMessage("§7La partie est terminée. Merci d'avoir joué !");
-                org.bukkit.Bukkit.broadcastMessage("");
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                Bukkit.broadcastMessage("");
+                Bukkit.broadcastMessage("§6§l✦✦✦ TOUTES LES ÉQUIPES ONT TERMINÉ ! ✦✦✦");
+                Bukkit.broadcastMessage("§7La partie est terminée. Merci d'avoir joué !");
+                Bukkit.broadcastMessage("");
                 BingoPlugin.getInstance().getBingoGame().setState(GameState.WAITING);
-            }, 60L); // 3 secondes de délai
+            }, 60L);
         }
     }
+
+    // ── Events de détection ──
 
     @EventHandler
     public void onPickup(EntityPickupItemEvent event) {
@@ -267,9 +316,14 @@ public class BingoListener implements Listener {
     @EventHandler
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
         String key = event.getAdvancement().getKey().getKey();
+        // Ignorer les recettes et les advancements bingo auto-générés
         if (key.contains("recipes/")) return;
+        if (event.getAdvancement().getKey().getNamespace().equals("bingoclassique")) return;
+        // Vérifier si c'est un objectif achievement du bingo
         checkObjective(event.getPlayer(), key);
     }
+
+    // ── Chat team ──
 
     @EventHandler
     public void onPlayerChat(org.bukkit.event.player.AsyncPlayerChatEvent event) {
@@ -293,13 +347,13 @@ public class BingoListener implements Listener {
             String formattedMessage = teamPrefix + team.getChatColor() + player.getName() + " §8» §f" + message;
 
             for (java.util.UUID uuid : team.getPlayers()) {
-                Player p = org.bukkit.Bukkit.getPlayer(uuid);
+                Player p = Bukkit.getPlayer(uuid);
                 if (p != null) p.sendMessage(formattedMessage);
             }
 
             BingoTeam specTeam = teamManager.getSpectatorTeam();
             for (java.util.UUID uuid : specTeam.getPlayers()) {
-                Player p = org.bukkit.Bukkit.getPlayer(uuid);
+                Player p = Bukkit.getPlayer(uuid);
                 if (p != null) p.sendMessage("§8[§cSpy§8] " + formattedMessage);
             }
         }
