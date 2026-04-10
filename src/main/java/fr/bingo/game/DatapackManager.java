@@ -52,72 +52,32 @@ public class DatapackManager {
 
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
-                // TOUS enfants directs de root → root est DONE → tous visibles
-                String parent = namespace + ":root";
+                String relayId = "relay_" + advId;
 
-                createItemAdvancement(dataFolder, obj, advId, parent);
+                // Le relay parent : col 0 → root, sinon → item précédent
+                String relayParent = (col == 0)
+                        ? namespace + ":root"
+                        : namespace + ":" + getAdvancementId(row, col - 1);
+
+                // 1) Relay invisible (tick, DONE, pas de display)
+                createRelayAdvancement(dataFolder, relayId, relayParent);
+
+                // 2) Item réel (impossible, display, parent = relay)
+                createItemAdvancement(dataFolder, obj, advId, namespace + ":" + relayId);
             }
         }
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             enableAndReload();
 
-            // Étape 1 : Award "found" pour TOUS → tout visible + doré
+            // Les relais invisibles (tick) rendent tout visible automatiquement.
+            // Items commencent GRIS → award "found" per-team quand trouvé.
             Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                awardAllForAllPlayers(grid);
-
-                // Étape 2 : Revoke "found" pour TOUS → tout visible mais GRIS
-                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                    revokeAllForAllPlayers(grid);
-
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.sendMessage("§b§l[Bingo] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
-                    }
-                }, 5L);
-            }, 5L);
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.sendMessage("§b§l[Bingo] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
+                }
+            }, 10L);
         }, 10L);
-    }
-
-    /**
-     * Award "found" sur TOUS les items pour TOUS les joueurs.
-     * Le client découvre tous les items (ils deviennent visibles).
-     */
-    private void awardAllForAllPlayers(BingoGrid grid) {
-        List<BingoObjective> objectives = grid.getObjectives();
-        int size = grid.getSize();
-
-        for (int i = 0; i < objectives.size(); i++) {
-            String advId = getAdvancementIdFromIndex(i, size);
-            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
-            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-            if (adv != null) {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.getAdvancementProgress(adv).awardCriteria("found");
-                }
-            }
-        }
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Award ALL pour " + Bukkit.getOnlinePlayers().size() + " joueurs sur " + objectives.size() + " items.");
-    }
-
-    /**
-     * Revoke "found" sur TOUS les items pour TOUS les joueurs.
-     * Les items restent visibles (le client les connaît) mais repassent en GRIS.
-     */
-    private void revokeAllForAllPlayers(BingoGrid grid) {
-        List<BingoObjective> objectives = grid.getObjectives();
-        int size = grid.getSize();
-
-        for (int i = 0; i < objectives.size(); i++) {
-            String advId = getAdvancementIdFromIndex(i, size);
-            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
-            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-            if (adv != null) {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.getAdvancementProgress(adv).revokeCriteria("found");
-                }
-            }
-        }
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Revoke ALL pour " + Bukkit.getOnlinePlayers().size() + " joueurs. Items maintenant GRIS.");
     }
 
     /**
@@ -179,6 +139,21 @@ public class DatapackManager {
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
+                "  }\n" +
+                "}");
+    }
+
+    /**
+     * Relay invisible : pas de "display" → n'apparaît pas dans l'UI.
+     * Critère tick → toujours DONE → ses enfants sont visibles.
+     * Sert de pont entre les items pour contourner la limite de profondeur.
+     */
+    private void createRelayAdvancement(File dir, String relayId, String parent) {
+        saveFile(dir, relayId + ".json",
+                "{\n" +
+                "  \"parent\": \"" + parent + "\",\n" +
+                "  \"criteria\": {\n" +
+                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
                 "  }\n" +
                 "}");
     }
