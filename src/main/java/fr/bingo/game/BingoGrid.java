@@ -101,6 +101,15 @@ public class BingoGrid {
         validMaterials.add(Material.COPPER_BULB);
         validMaterials.add(Material.CHISELED_TUFF);
         validMaterials.add(Material.POLISHED_TUFF);
+        validMaterials.add(Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE);
+        validMaterials.add(Material.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE);
+        
+        // Trims (Ornements) célèbres dont la Spire
+        validMaterials.add(Material.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE);
+        validMaterials.add(Material.SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE);
+        validMaterials.add(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE);
+        validMaterials.add(Material.WARD_ARMOR_TRIM_SMITHING_TEMPLATE);
+        validMaterials.add(Material.VEX_ARMOR_TRIM_SMITHING_TEMPLATE);
         
         Collections.shuffle(validMaterials);
         
