@@ -78,61 +78,13 @@ public class DatapackManager {
             } catch (Exception ignored) {}
 
             Bukkit.reloadData();
-            BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack rechargé.");
-
-            // Rendre TOUS les advancements visibles pour les joueurs en ligne
-            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    discoverAllAdvancements(p, grid);
-                }
-                BingoPlugin.getInstance().getLogger().info("[Bingo] Advancements rendus visibles pour tous les joueurs.");
-
-                // Kick pour forcer le rendu client
-                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.kickPlayer("§b§lBingo Classique\n\n§eLa grille a été mise à jour !\n§fReconnectez-vous pour voir la grille.");
-                    }
-                }, 10L);
-            }, 20L);
+            BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack rechargé. Tous les advancements utilisent tick → grille 100% visible.");
+            
+            // Informer les joueurs
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage("§b§l[Bingo] §aLa grille a été mise à jour ! Appuyez sur §e[L] §aou tapez §e/bg §apour la voir.");
+            }
         }, 10L);
-    }
-
-    /**
-     * Donne puis retire tous les advancements à un joueur pour les rendre "découverts"
-     * (visibles dans l'onglet même si non obtenus).
-     * C'est LE trick pour que toute la grille soit visible d'un coup.
-     */
-    public void discoverAllAdvancements(Player player, BingoGrid grid) {
-        int size = grid.getSize();
-        List<BingoObjective> objectives = grid.getObjectives();
-
-        // Phase 1 : GRANT tous les advancements (les rend "discovered")
-        for (int i = 0; i < objectives.size(); i++) {
-            String advId = getAdvancementIdFromIndex(i, size);
-            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
-            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-            if (adv != null) {
-                org.bukkit.advancement.AdvancementProgress progress = player.getAdvancementProgress(adv);
-                for (String criteria : adv.getCriteria()) {
-                    progress.awardCriteria(criteria);
-                }
-            }
-        }
-
-        // Phase 2 : REVOKE tous les advancements (remet à "non obtenu" mais reste visible)
-        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            for (int i = 0; i < objectives.size(); i++) {
-                String advId = getAdvancementIdFromIndex(i, size);
-                org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
-                org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-                if (adv != null) {
-                    org.bukkit.advancement.AdvancementProgress progress = player.getAdvancementProgress(adv);
-                    for (String criteria : progress.getAwardedCriteria()) {
-                        progress.revokeCriteria(criteria);
-                    }
-                }
-            }
-        }, 2L);
     }
 
     private void cleanDirectory(File folder) {
@@ -173,6 +125,8 @@ public class DatapackManager {
             displayName = displayName.substring(0, 1).toUpperCase() + displayName.substring(1);
         }
 
+        // Utilise minecraft:tick pour que TOUS les advancements s'auto-complètent
+        // → toute la grille est visible immédiatement (pas de problème de parent non-obtenu)
         String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
@@ -185,8 +139,8 @@ public class DatapackManager {
                 "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
-                "    \"impossible\": {\n" +
-                "      \"trigger\": \"minecraft:impossible\"\n" +
+                "    \"auto\": {\n" +
+                "      \"trigger\": \"minecraft:tick\"\n" +
                 "    }\n" +
                 "  }\n" +
                 "}";

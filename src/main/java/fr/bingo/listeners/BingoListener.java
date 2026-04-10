@@ -38,14 +38,6 @@ public class BingoListener implements Listener {
                 net.md_5.bungee.api.chat.TextComponent.fromLegacy("§b§lChoisis ton équipe dans l'inventaire")
             );
         }
-
-        // Rendre toute la grille de Bingo visible pour ce joueur (si la grille est générée)
-        BingoGrid grid = BingoPlugin.getInstance().getBingoGame().getGrid();
-        if (grid != null && !grid.getObjectives().isEmpty()) {
-            org.bukkit.Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                new fr.bingo.game.DatapackManager().discoverAllAdvancements(player, grid);
-            }, 20L);
-        }
     }
 
     @EventHandler
