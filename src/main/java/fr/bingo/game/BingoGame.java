@@ -93,6 +93,13 @@ public class BingoGame {
             this.state = GameState.PLAYING;
             this.startTime = System.currentTimeMillis();
 
+            World world = Bukkit.getWorlds().get(0);
+
+            // Gamerules : jour éternel + pas d'annonces d'advancements
+            world.setGameRule(org.bukkit.GameRule.DO_DAYLIGHT_CYCLE, false);
+            world.setTime(6000); // Midi
+            world.setGameRule(org.bukkit.GameRule.ANNOUNCE_ADVANCEMENTS, false);
+
             for (Player p : Bukkit.getOnlinePlayers()) {
                 p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
                 p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);

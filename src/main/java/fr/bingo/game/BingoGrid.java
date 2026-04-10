@@ -50,14 +50,9 @@ public class BingoGrid {
         validMaterials.add(Material.HONEYCOMB);
         validMaterials.add(Material.HONEY_BOTTLE);
         validMaterials.add(Material.TURTLE_SCUTE);
-        validMaterials.add(Material.TURTLE_HELMET);
         validMaterials.add(Material.HEART_OF_THE_SEA);
         validMaterials.add(Material.NAUTILUS_SHELL);
         validMaterials.add(Material.PHANTOM_MEMBRANE);
-        validMaterials.add(Material.DRAGON_BREATH);
-        validMaterials.add(Material.ELYTRA);
-        validMaterials.add(Material.DRAGON_HEAD);
-        validMaterials.add(Material.SHULKER_SHELL);
         validMaterials.add(Material.TOTEM_OF_UNDYING);
         validMaterials.add(Material.TRIDENT);
         validMaterials.add(Material.CROSSBOW);
@@ -83,35 +78,35 @@ public class BingoGrid {
         validMaterials.add(Material.GLOW_BERRIES);
         validMaterials.add(Material.GLOW_INK_SAC);
         validMaterials.add(Material.POWDER_SNOW_BUCKET);
-        // Items supplémentaires pour soutenir du 7x7 (49 blocs)
+        // Items craftables intéressants
         validMaterials.add(Material.CAKE);
         validMaterials.add(Material.BOOKSHELF);
         validMaterials.add(Material.ENCHANTING_TABLE);
         validMaterials.add(Material.BREWING_STAND);
         validMaterials.add(Material.ANVIL);
         validMaterials.add(Material.JACK_O_LANTERN);
-        
-        // Items majeurs de la 1.21 (Tricky Trials)
+        validMaterials.add(Material.PISTON);
+        validMaterials.add(Material.COMPASS);
+        validMaterials.add(Material.CLOCK);
+        validMaterials.add(Material.LEAD);
+        validMaterials.add(Material.NAME_TAG);
+        validMaterials.add(Material.SADDLE);
+        validMaterials.add(Material.PAINTING);
+        validMaterials.add(Material.ITEM_FRAME);
+        validMaterials.add(Material.FLOWER_POT);
+        validMaterials.add(Material.DRIED_KELP_BLOCK);
+        validMaterials.add(Material.LANTERN);
+        validMaterials.add(Material.CHAIN);
+        validMaterials.add(Material.BREAD);
+        validMaterials.add(Material.COOKIE);
+        validMaterials.add(Material.PUMPKIN_PIE);
+        validMaterials.add(Material.MELON_SLICE);
+        // Items 1.21
         validMaterials.add(Material.BREEZE_ROD);
         validMaterials.add(Material.TRIAL_KEY);
-        validMaterials.add(Material.OMINOUS_BOTTLE);
         validMaterials.add(Material.CRAFTER);
         validMaterials.add(Material.WIND_CHARGE);
         validMaterials.add(Material.COPPER_BULB);
-        validMaterials.add(Material.CHISELED_TUFF);
-        validMaterials.add(Material.POLISHED_TUFF);
-        validMaterials.add(Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE);
-        validMaterials.add(Material.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE);
-        
-        // Items majeurs 1.21.11 (Mounts of Mayhem)
-        validMaterials.add(Material.NETHERITE_HORSE_ARMOR);
-        
-        // Trims (Ornements) célèbres dont la Spire
-        validMaterials.add(Material.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE);
-        validMaterials.add(Material.SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE);
-        validMaterials.add(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE);
-        validMaterials.add(Material.WARD_ARMOR_TRIM_SMITHING_TEMPLATE);
-        validMaterials.add(Material.VEX_ARMOR_TRIM_SMITHING_TEMPLATE);
         
         Collections.shuffle(validMaterials);
         

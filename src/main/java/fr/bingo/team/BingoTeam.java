@@ -79,6 +79,13 @@ public class BingoTeam {
     public boolean isFinished() {
         return isFinished;
     }
+
+    public void setFinished(boolean finished) {
+        this.isFinished = finished;
+        if (finished) {
+            this.finishedTime = System.currentTimeMillis();
+        }
+    }
     
     public long getFinishedTime() {
         return finishedTime;

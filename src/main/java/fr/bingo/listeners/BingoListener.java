@@ -136,14 +136,15 @@ public class BingoListener implements Listener {
         }
     }
 
-    // ── Pas de faim / pas de mort de faim ──
+    // ── Pas de faim en attente seulement ──
     @EventHandler
     public void onFoodLevelChange(org.bukkit.event.entity.FoodLevelChangeEvent event) {
-        // Empêcher la perte de faim (maintenir toujours à 20)
-        if (event.getEntity() instanceof Player) {
-            event.setCancelled(true);
-            ((Player) event.getEntity()).setFoodLevel(20);
-            ((Player) event.getEntity()).setSaturation(20f);
+        if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
+            if (event.getEntity() instanceof Player) {
+                event.setCancelled(true);
+                ((Player) event.getEntity()).setFoodLevel(20);
+                ((Player) event.getEntity()).setSaturation(20f);
+            }
         }
     }
 
@@ -169,9 +170,78 @@ public class BingoListener implements Listener {
 
                     int seconds = (int) BingoPlugin.getInstance().getBingoGame().getElapsedSeconds();
                     BingoPlugin.getInstance().getDatabaseManager().recordStat(player.getName(), seconds, objectiveId);
+
+                    // Vérifier si l'équipe a tout trouvé
+                    checkTeamCompletion(team, grid);
                 }
                 break;
             }
+        }
+    }
+
+    /**
+     * Vérifie si l'équipe a trouvé tous les objectifs.
+     * Si oui → mode spectateur + message avec le temps.
+     * Si toutes les équipes ont fini → fin de la partie.
+     */
+    private void checkTeamCompletion(BingoTeam team, BingoGrid grid) {
+        int totalObjectives = grid.getObjectives().size();
+        int teamFound = team.getUnlockedObjectives().size();
+
+        if (teamFound >= totalObjectives && !team.isFinished()) {
+            team.setFinished(true);
+
+            long elapsed = BingoPlugin.getInstance().getBingoGame().getElapsedSeconds();
+            int min = (int) (elapsed / 60);
+            int sec = (int) (elapsed % 60);
+            String timeStr = String.format("%02d:%02d", min, sec);
+
+            // Annonce dans le chat
+            org.bukkit.Bukkit.broadcastMessage("");
+            org.bukkit.Bukkit.broadcastMessage("§8§m                                                §r");
+            org.bukkit.Bukkit.broadcastMessage("  " + team.getChatColor() + "§l★ L'équipe " + team.getName() + " a terminé le Bingo ! ★");
+            org.bukkit.Bukkit.broadcastMessage("  §7Temps : §e§l" + timeStr);
+            org.bukkit.Bukkit.broadcastMessage("§8§m                                                §r");
+            org.bukkit.Bukkit.broadcastMessage("");
+
+            // Passer les membres en spectateur
+            for (java.util.UUID uuid : team.getPlayers()) {
+                Player p = org.bukkit.Bukkit.getPlayer(uuid);
+                if (p != null) {
+                    p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+                    p.sendTitle(team.getChatColor() + "§lBINGO !", "§7Temps : §e" + timeStr, 10, 60, 20);
+                }
+            }
+
+            // Vérifier si TOUTES les équipes (non-spectateur) ont fini
+            checkAllTeamsFinished();
+        }
+    }
+
+    /**
+     * Si toutes les équipes ont fini → fin de la partie.
+     */
+    private void checkAllTeamsFinished() {
+        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+        boolean allDone = true;
+
+        for (BingoTeam t : tm.getTeams()) {
+            if (t.getName().equals("Spectateur")) continue;
+            if (t.getPlayers().isEmpty()) continue; // Ignorer les équipes vides
+            if (!t.isFinished()) {
+                allDone = false;
+                break;
+            }
+        }
+
+        if (allDone) {
+            org.bukkit.Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                org.bukkit.Bukkit.broadcastMessage("");
+                org.bukkit.Bukkit.broadcastMessage("§6§l✦✦✦ TOUTES LES ÉQUIPES ONT TERMINÉ ! ✦✦✦");
+                org.bukkit.Bukkit.broadcastMessage("§7La partie est terminée. Merci d'avoir joué !");
+                org.bukkit.Bukkit.broadcastMessage("");
+                BingoPlugin.getInstance().getBingoGame().setState(GameState.WAITING);
+            }, 60L); // 3 secondes de délai
         }
     }
 
