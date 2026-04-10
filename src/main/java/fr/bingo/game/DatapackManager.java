@@ -146,12 +146,21 @@ public class DatapackManager {
     /**
      * Relay invisible : pas de "display" → n'apparaît pas dans l'UI.
      * Critère tick → toujours DONE → ses enfants sont visibles.
-     * Sert de pont entre les items pour contourner la limite de profondeur.
+     * Display minimal (vitre bleu clair) pour compter comme "noeud affiché complété".
      */
     private void createRelayAdvancement(File dir, String relayId, String parent) {
         saveFile(dir, relayId + ".json",
                 "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
+                "  \"display\": {\n" +
+                "    \"icon\": { \"id\": \"minecraft:light_blue_stained_glass_pane\" },\n" +
+                "    \"title\": \" \",\n" +
+                "    \"description\": \" \",\n" +
+                "    \"frame\": \"task\",\n" +
+                "    \"show_toast\": false,\n" +
+                "    \"announce_to_chat\": false,\n" +
+                "    \"hidden\": false\n" +
+                "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
                 "  }\n" +
