@@ -83,13 +83,13 @@ public class BingoGrid {
         validMaterials.add(Material.GLOW_BERRIES);
         validMaterials.add(Material.GLOW_INK_SAC);
         validMaterials.add(Material.POWDER_SNOW_BUCKET);
-        // Ajout d'autres blocs basiques pour pouvoir soutenir du 7x7 (49 blocs)
-        validMaterials.add(Material.DIRT);
-        validMaterials.add(Material.OAK_LOG);
-        validMaterials.add(Material.STONE);
-        validMaterials.add(Material.COBBLESTONE);
-        validMaterials.add(Material.SAND);
-        validMaterials.add(Material.GRAVEL);
+        // Items supplémentaires pour soutenir du 7x7 (49 blocs)
+        validMaterials.add(Material.CAKE);
+        validMaterials.add(Material.BOOKSHELF);
+        validMaterials.add(Material.ENCHANTING_TABLE);
+        validMaterials.add(Material.BREWING_STAND);
+        validMaterials.add(Material.ANVIL);
+        validMaterials.add(Material.JACK_O_LANTERN);
         
         // Items majeurs de la 1.21 (Tricky Trials)
         validMaterials.add(Material.BREEZE_ROD);
