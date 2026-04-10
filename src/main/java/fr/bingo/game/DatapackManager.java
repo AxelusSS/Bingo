@@ -155,22 +155,15 @@ public class DatapackManager {
     }
 
     /**
-     * Pont invisible entre deux items.
+     * Pont INVISIBLE entre deux items.
+     * PAS de champ "display" → n'apparaît PAS dans l'arbre d'advancements.
      * 1 seul critère tick → auto-complète → DONE → le prochain item est visible.
-     * L'icône est un verre bleu clair qui se fond dans le fond.
+     * Les enfants se connectent visuellement au plus proche parent affiché.
      */
     private void createBridgeAdvancement(File dataFolder, String bridgeId, String parent) {
+        // PAS de "display" → le pont est 100% invisible dans l'onglet advancements
         String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
-                "  \"display\": {\n" +
-                "    \"icon\": { \"id\": \"minecraft:light_blue_stained_glass_pane\" },\n" +
-                "    \"title\": \" \",\n" +
-                "    \"description\": \" \",\n" +
-                "    \"frame\": \"task\",\n" +
-                "    \"show_toast\": false,\n" +
-                "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
-                "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"auto\": {\n" +
                 "      \"trigger\": \"minecraft:tick\"\n" +
