@@ -36,6 +36,7 @@ public class DatapackManager {
 
         BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs pour grille " + size + "x" + size);
 
+        int filesCreated = 0;
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 int index = row * size + col;
@@ -52,30 +53,40 @@ public class DatapackManager {
                 }
 
                 createObjectiveAdvancement(dataFolder, obj, parent);
+                filesCreated++;
+
+                // Log debug pour les premières lignes
+                if (row < 2) {
+                    BingoPlugin.getInstance().getLogger().info("[Bingo] [" + row + "," + col + "] " + obj.getId().toLowerCase() + " parent=" + parent);
+                }
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack généré avec succès ! " + objectives.size() + " advancements créés.");
-        
-        // Forcer le rechargement du datapack
-        Bukkit.reloadData();
-        
-        // Révoquer les anciens advancements de tous les joueurs
+        BingoPlugin.getInstance().getLogger().info("[Bingo] " + filesCreated + " fichiers créés dans " + dataFolder.getAbsolutePath());
+
+        // Vérification : compter les fichiers réellement créés
+        File[] createdFiles = dataFolder.listFiles();
+        if (createdFiles != null) {
+            BingoPlugin.getInstance().getLogger().info("[Bingo] Fichiers sur disque : " + createdFiles.length + " (attendu: " + (filesCreated + 1) + " avec root)");
+        }
+
+        // Forcer l'activation du datapack + reload
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
-                for (BingoObjective obj : objectives) {
-                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, obj.getId().toLowerCase());
-                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
-                    if (adv != null) {
-                        org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(adv);
-                        for (String criteria : progress.getAwardedCriteria()) {
-                            progress.revokeCriteria(criteria);
-                        }
-                    }
+            try {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"file/bingo_datapack\"");
+            } catch (Exception ignored) {}
+            
+            Bukkit.reloadData();
+            
+            BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack rechargé !");
+            
+            // Forcer les joueurs à re-recevoir les advancements en les kickant gentiment
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
+                    p.kickPlayer("§b§lBingo Classique\n\n§eLa grille a été mise à jour !\n§fReconnectez-vous pour voir les changements.");
                 }
-            }
-            BingoPlugin.getInstance().getLogger().info("[Bingo] Advancements réinitialisés pour tous les joueurs.");
-        }, 20L);
+            }, 20L);
+        }, 10L);
     }
 
     private void cleanDirectory(File folder) {
@@ -90,13 +101,12 @@ public class DatapackManager {
     }
 
     private void createRootAdvancement(File dataFolder) {
-        // Format 1.21+ : pas de "textures/" ni ".png"
         String json = "{\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": \"Bingo Classique\",\n" +
                 "    \"description\": \"Appuyez sur [L] pour voir la grille !\",\n" +
-                "    \"background\": \"minecraft:block/purpur_block\",\n" +
+                "    \"background\": \"minecraft:block/light_blue_concrete_powder\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
