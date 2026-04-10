@@ -163,8 +163,8 @@ public class BingoListener implements Listener {
                 if (!team.hasUnlocked(objectiveId)) {
                     team.unlockObjective(objectiveId, grid.getSize());
 
-                    // Item trouvé → frame étoile ★
-                    new fr.bingo.game.DatapackManager().refreshFoundItems(grid);
+                    // Award "found" per-player (uniquement cette équipe voit l'or)
+                    fr.bingo.game.DatapackManager.markObjectiveFound(grid, team, objectiveId);
 
                     player.getServer().broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §aa trouvé §e" + obj.getId().replace("_", " ") + " §a!");
 

@@ -2,28 +2,27 @@ package fr.bingo.game;
 
 import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
-import fr.bingo.team.TeamManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Gère la génération du datapack d'advancements pour la grille Bingo.
  *
- * Tous les items utilisent le trigger tick (auto-complète → visible et doré).
- * Les items trouvés passent en frame "challenge" (étoile ★).
- * Pas de bridges, pas de limite de profondeur.
+ * Chaque item a 2 critères :
+ * - "auto" (tick) → force la visibilité (le client connaît l'item)
+ * - "found" (impossible) → contrôle gris/or (awarding per-player par équipe)
+ *
+ * requirements: [["found"]] → seul "found" détermine si l'item est complété.
+ * Résultat : pas de barre de progression, gris → or, per-player !
  */
 public class DatapackManager {
 
     private final String namespace = "bingoclassique";
-    private static int pendingReloadTask = -1;
 
     public static String getAdvancementId(int row, int col) {
         return String.format("r%dc%d", row, col);
@@ -36,10 +35,6 @@ public class DatapackManager {
     // ── Génération ──
 
     public void generateAdvancementsDatapack(BingoGrid grid) {
-        generateAdvancementsDatapack(grid, new HashSet<>());
-    }
-
-    private void generateAdvancementsDatapack(BingoGrid grid, Set<String> foundIds) {
         File dataFolder = getDataFolder();
         if (dataFolder == null) return;
 
@@ -61,9 +56,8 @@ public class DatapackManager {
                 String parent = col == 0
                         ? namespace + ":root"
                         : namespace + ":" + getAdvancementId(row, col - 1);
-                boolean found = foundIds.contains(obj.getId());
 
-                createItemAdvancement(dataFolder, obj, advId, parent, found);
+                createItemAdvancement(dataFolder, obj, advId, parent);
             }
         }
 
@@ -76,73 +70,67 @@ public class DatapackManager {
     }
 
     /**
-     * Rafraîchit la grille : items trouvés → frame challenge (★).
-     * Debounce intégré pour éviter les reloads multiples.
+     * Quand une équipe trouve un item :
+     * → Award "found" pour TOUS les joueurs de cette équipe uniquement.
+     * → Les autres équipes voient toujours l'item en GRIS.
      */
-    public void refreshFoundItems(BingoGrid grid) {
-        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
-        Set<String> foundIds = new HashSet<>();
-        for (BingoTeam team : tm.getTeams()) {
-            foundIds.addAll(team.getUnlockedObjectives());
-        }
-
-        File dataFolder = getDataFolder();
-        if (dataFolder == null) return;
-
+    public static void markObjectiveFound(BingoGrid grid, BingoTeam team, String objectiveId) {
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
-                int index = row * size + col;
-                if (index >= objectives.size()) break;
+        for (int i = 0; i < objectives.size(); i++) {
+            if (objectives.get(i).getId().equalsIgnoreCase(objectiveId)) {
+                String advId = getAdvancementIdFromIndex(i, size);
+                org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
 
-                BingoObjective obj = objectives.get(index);
-                String advId = getAdvancementId(row, col);
-                String parent = col == 0
-                        ? namespace + ":root"
-                        : namespace + ":" + getAdvancementId(row, col - 1);
-                boolean found = foundIds.contains(obj.getId());
-
-                createItemAdvancement(dataFolder, obj, advId, parent, found);
+                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                    org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+                    if (adv != null) {
+                        // Award uniquement pour les joueurs de CETTE équipe
+                        for (java.util.UUID uuid : team.getPlayers()) {
+                            Player p = Bukkit.getPlayer(uuid);
+                            if (p != null) {
+                                p.getAdvancementProgress(adv).awardCriteria("found");
+                            }
+                        }
+                    }
+                }, 1L);
+                break;
             }
         }
-
-        if (pendingReloadTask != -1) {
-            Bukkit.getScheduler().cancelTask(pendingReloadTask);
-        }
-        pendingReloadTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            enableAndReload();
-            pendingReloadTask = -1;
-        }, 10L).getTaskId();
     }
 
     // ── Fichiers JSON ──
 
-    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent, boolean found) {
+    /**
+     * Item de la grille avec double critère :
+     * - "auto" (tick) → visibilité immédiate
+     * - "found" (impossible) → gris/or per-player
+     * - requirements: [["found"]] → PAS de barre de progression
+     */
+    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
         String name = obj.getId().replace("_", " ");
         if (!name.isEmpty()) name = name.substring(0, 1).toUpperCase() + name.substring(1);
 
-        String frame = found ? "challenge" : "task";
-        String desc = found ? "\\u00a7a\\u2714 Trouv\\u00e9 !" : "Obtenir un(e) " + name;
-
-        saveFile(dir, advId + ".json",
-                "{\n" +
+        String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"" + itemId + "\" },\n" +
                 "    \"title\": \"" + name + "\",\n" +
-                "    \"description\": \"" + desc + "\",\n" +
-                "    \"frame\": \"" + frame + "\",\n" +
+                "    \"description\": \"Obtenir un(e) " + name + "\",\n" +
+                "    \"frame\": \"task\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
-                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
-                "  }\n" +
-                "}");
+                "    \"auto\": { \"trigger\": \"minecraft:tick\" },\n" +
+                "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
+                "  },\n" +
+                "  \"requirements\": [[\"found\"]]\n" +
+                "}";
+        saveFile(dir, advId + ".json", json);
     }
 
     private void createRootAdvancement(File dir) {
