@@ -141,18 +141,8 @@ public class BingoListener implements Listener {
                 if (!team.hasUnlocked(objectiveId)) {
                     team.unlockObjective(objectiveId, grid.getSize());
 
-                    // Sync Datapack — utiliser l'ID positionnel (r0c0, r0c1, etc.)
-                    String advId = fr.bingo.game.DatapackManager.getAdvancementIdFromIndex(i, grid.getSize());
-                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("bingoclassique", advId);
-                    org.bukkit.advancement.Advancement adv = org.bukkit.Bukkit.getAdvancement(key);
-                    if (adv != null) {
-                        for (java.util.UUID uuid : team.getPlayers()) {
-                            org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(uuid);
-                            if (p != null) {
-                                p.getAdvancementProgress(adv).awardCriteria("impossible");
-                            }
-                        }
-                    }
+                    // Mettre à jour la grille visuelle (passe le frame en "challenge" = étoile)
+                    new fr.bingo.game.DatapackManager().refreshFoundItems(grid);
 
                     player.getServer().broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §aa trouvé §e" + obj.getId().replace("_", " ") + " §a!");
 
