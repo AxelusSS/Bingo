@@ -121,8 +121,10 @@ public class DatapackManager {
     // ── Création des fichiers JSON ──
 
     /**
-     * Item de la grille : 2 critères (visible=tick + found=impossible)
-     * Visible d'office grâce au tick, gris tant que "found" n'est pas award.
+     * Item de la grille : 1 seul critère "found" (impossible).
+     * La visibilité est assurée par le pont invisible (parent DONE).
+     * Gris par défaut, passe en or quand "found" est award.
+     * PAS de barre de progression (un seul critère = 0/1 → pas affiché).
      */
     private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String advId, String parent) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
@@ -143,9 +145,6 @@ public class DatapackManager {
                 "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
-                "    \"visible\": {\n" +
-                "      \"trigger\": \"minecraft:tick\"\n" +
-                "    },\n" +
                 "    \"found\": {\n" +
                 "      \"trigger\": \"minecraft:impossible\"\n" +
                 "    }\n" +
