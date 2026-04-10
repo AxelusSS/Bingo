@@ -33,11 +33,18 @@ public class BingoListener implements Listener {
         if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
             BingoPlugin.getInstance().getBingoGame().teleportToWaitingArea(player);
             teamManager.giveTeamBanners(player);
-            // Action bar au-dessus de la hotbar
             player.spigot().sendMessage(
                 net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
                 net.md_5.bungee.api.chat.TextComponent.fromLegacy("§b§lChoisis ton équipe dans l'inventaire")
             );
+        }
+
+        // Rendre toute la grille de Bingo visible pour ce joueur (si la grille est générée)
+        BingoGrid grid = BingoPlugin.getInstance().getBingoGame().getGrid();
+        if (grid != null && !grid.getObjectives().isEmpty()) {
+            org.bukkit.Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                new fr.bingo.game.DatapackManager().discoverAllAdvancements(player, grid);
+            }, 20L);
         }
     }
 

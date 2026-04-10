@@ -2,6 +2,7 @@ package fr.bingo.game;
 
 import fr.bingo.BingoPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -13,21 +14,14 @@ public class DatapackManager {
     private final String namespace = "bingoclassique";
 
     /**
-     * Retourne l'ID d'advancement pour un objectif à la position donnée dans la grille.
-     * Format : "r{row}c{col}" pour un contrôle total de l'ordre alphabétique
-     * (r0c1 < r1c0 → l'horizontal est toujours "premier enfant" → va à DROITE)
+     * ID positionnel pour un objectif à la position donnée.
      */
     public static String getAdvancementId(int row, int col) {
         return String.format("r%dc%d", row, col);
     }
 
-    /**
-     * Retrouve l'ID d'advancement à partir de l'index dans la liste d'objectifs.
-     */
     public static String getAdvancementIdFromIndex(int index, int gridSize) {
-        int row = index / gridSize;
-        int col = index % gridSize;
-        return getAdvancementId(row, col);
+        return getAdvancementId(index / gridSize, index % gridSize);
     }
 
     public void generateAdvancementsDatapack(BingoGrid grid) {
@@ -54,7 +48,8 @@ public class DatapackManager {
 
         BingoPlugin.getInstance().getLogger().info("[Bingo] Génération de " + objectives.size() + " objectifs pour grille " + size + "x" + size);
 
-        int filesCreated = 0;
+        // Structure : tous les col0 sont enfants de root (→ grille verticale)
+        //             chaque colN est enfant de col(N-1) (→ chaîne horizontale)
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 int index = row * size + col;
@@ -63,48 +58,81 @@ public class DatapackManager {
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
 
-                // ── Chaînage en cascade ──
-                // col0, row0 → parent = root
-                // col0, rowN → parent = col0 de row(N-1)  (descend verticalement)
-                // colN       → parent = col(N-1) même row  (va à droite)
                 String parent;
-                if (col == 0 && row == 0) {
+                if (col == 0) {
                     parent = namespace + ":root";
-                } else if (col == 0) {
-                    // Cascade : enfant du col0 de la rangée précédente
-                    parent = namespace + ":" + getAdvancementId(row - 1, 0);
                 } else {
-                    // Chaîne horizontale : enfant de l'item précédent dans la même rangée
                     parent = namespace + ":" + getAdvancementId(row, col - 1);
                 }
 
                 createObjectiveAdvancement(dataFolder, obj, advId, parent);
-                filesCreated++;
-
-                if (row < 2) {
-                    BingoPlugin.getInstance().getLogger().info("[Bingo] [" + row + "," + col + "] " + advId + " (" + obj.getId().toLowerCase() + ") parent=" + parent);
-                }
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("[Bingo] " + filesCreated + " fichiers créés");
+        BingoPlugin.getInstance().getLogger().info("[Bingo] " + objectives.size() + " advancements créés.");
 
-        // Forcer l'activation du datapack + reload
+        // Forcer le rechargement
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             try {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"file/bingo_datapack\"");
             } catch (Exception ignored) {}
 
             Bukkit.reloadData();
-            BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack rechargé !");
+            BingoPlugin.getInstance().getLogger().info("[Bingo] Datapack rechargé.");
 
-            // Kick les joueurs pour forcer le reload des advancements côté client
+            // Rendre TOUS les advancements visibles pour les joueurs en ligne
             Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
-                    p.kickPlayer("§b§lBingo Classique\n\n§eLa grille a été mise à jour !\n§fReconnectez-vous pour voir les changements.");
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    discoverAllAdvancements(p, grid);
                 }
+                BingoPlugin.getInstance().getLogger().info("[Bingo] Advancements rendus visibles pour tous les joueurs.");
+
+                // Kick pour forcer le rendu client
+                Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.kickPlayer("§b§lBingo Classique\n\n§eLa grille a été mise à jour !\n§fReconnectez-vous pour voir la grille.");
+                    }
+                }, 10L);
             }, 20L);
         }, 10L);
+    }
+
+    /**
+     * Donne puis retire tous les advancements à un joueur pour les rendre "découverts"
+     * (visibles dans l'onglet même si non obtenus).
+     * C'est LE trick pour que toute la grille soit visible d'un coup.
+     */
+    public void discoverAllAdvancements(Player player, BingoGrid grid) {
+        int size = grid.getSize();
+        List<BingoObjective> objectives = grid.getObjectives();
+
+        // Phase 1 : GRANT tous les advancements (les rend "discovered")
+        for (int i = 0; i < objectives.size(); i++) {
+            String advId = getAdvancementIdFromIndex(i, size);
+            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
+            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+            if (adv != null) {
+                org.bukkit.advancement.AdvancementProgress progress = player.getAdvancementProgress(adv);
+                for (String criteria : adv.getCriteria()) {
+                    progress.awardCriteria(criteria);
+                }
+            }
+        }
+
+        // Phase 2 : REVOKE tous les advancements (remet à "non obtenu" mais reste visible)
+        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+            for (int i = 0; i < objectives.size(); i++) {
+                String advId = getAdvancementIdFromIndex(i, size);
+                org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(namespace, advId);
+                org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(key);
+                if (adv != null) {
+                    org.bukkit.advancement.AdvancementProgress progress = player.getAdvancementProgress(adv);
+                    for (String criteria : progress.getAwardedCriteria()) {
+                        progress.revokeCriteria(criteria);
+                    }
+                }
+            }
+        }, 2L);
     }
 
     private void cleanDirectory(File folder) {
@@ -152,7 +180,7 @@ public class DatapackManager {
                 "    \"title\": \"" + displayName + "\",\n" +
                 "    \"description\": \"Obtenir un(e) " + displayName + "\",\n" +
                 "    \"frame\": \"task\",\n" +
-                "    \"show_toast\": true,\n" +
+                "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
                 "  },\n" +
