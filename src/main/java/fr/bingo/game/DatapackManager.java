@@ -22,47 +22,49 @@ public class DatapackManager {
             return;
         }
 
-        // Ecrire le pack.mcmeta
         try (FileWriter writer = new FileWriter(new File(datapackFolder, "pack.mcmeta"))) {
             writer.write("{ \"pack\": { \"pack_format\": 48, \"description\": \"Bingo Advancements\" } }");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        // Nettoyer les anciens advancements
         cleanDirectory(dataFolder);
-
-        // Créer l'advancement Root (point d'ancrage invisible)
         createRootAdvancement(dataFolder);
 
-        // Créer tous les objectifs en grille NxN
-        // Stratégie : chaque item de la colonne 0 est enfant de root (= s'empilent verticalement)
-        // chaque item suivant dans la ligne est enfant du précédent (= va vers la droite)
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
-        
+
+        // Stratégie de chaînage pour obtenir une vraie grille NxN :
+        // - L'item (row, 0) est enfant de root → s'empile verticalement sous root
+        // - L'item (row, col) est enfant de (row, col-1) → s'étend horizontalement
+        // Résultat visuel MC :
+        //   [root] [r0c0] [r0c1] [r0c2] ...
+        //          [r1c0] [r1c1] [r1c2] ...
+        //          [r2c0] [r2c1] [r2c2] ...
+
         for (int row = 0; row < size; row++) {
             for (int col = 0; col < size; col++) {
                 int index = row * size + col;
                 if (index >= objectives.size()) break;
-                
+
                 BingoObjective obj = objectives.get(index);
-                
-                // Parent = toujours root, on positionne tout manuellement avec x/y
-                String parent = namespace + ":root";
-                
-                // Coordonnées absolues dans la vue advancement (espacement de 1.0)
-                float displayX = col * 1.0f;
-                float displayY = row * 1.0f;
-                
-                createObjectiveAdvancement(dataFolder, obj, parent, displayX, displayY);
+
+                String parent;
+                if (col == 0) {
+                    parent = namespace + ":root";
+                } else {
+                    int prevIndex = row * size + (col - 1);
+                    parent = namespace + ":" + objectives.get(prevIndex).getId().toLowerCase();
+                }
+
+                createObjectiveAdvancement(dataFolder, obj, parent);
             }
         }
 
-        BingoPlugin.getInstance().getLogger().info("Datapack généré avec succès ! Rechargement du jeu...");
+        BingoPlugin.getInstance().getLogger().info("Datapack généré ! Taille: " + size + "x" + size);
         Bukkit.reloadData();
     }
-    
+
     private void cleanDirectory(File folder) {
         if (!folder.exists() || !folder.isDirectory()) return;
         File[] files = folder.listFiles();
@@ -75,12 +77,13 @@ public class DatapackManager {
     }
 
     private void createRootAdvancement(File dataFolder) {
+        // On utilise un fond vanilla valide (stone = texture qui existe à coup sûr)
         String json = "{\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": \"Bingo Classique\",\n" +
                 "    \"description\": \"Appuyez sur [L] pour voir la grille !\",\n" +
-                "    \"background\": \"minecraft:textures/block/light_blue_concrete_powder.png\",\n" +
+                "    \"background\": \"minecraft:textures/gui/advancements/backgrounds/stone.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false\n" +
@@ -91,18 +94,16 @@ public class DatapackManager {
                 "    }\n" +
                 "  }\n" +
                 "}";
-
         saveFile(dataFolder, "root.json", json);
     }
 
-    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String parent, float x, float y) {
+    private void createObjectiveAdvancement(File dataFolder, BingoObjective obj, String parent) {
         String itemId = "minecraft:" + obj.getId().toLowerCase();
         String displayName = obj.getId().replace("_", " ");
-        // Première lettre majuscule
         if (!displayName.isEmpty()) {
             displayName = displayName.substring(0, 1).toUpperCase() + displayName.substring(1);
         }
-        
+
         String json = "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
@@ -112,9 +113,7 @@ public class DatapackManager {
                 "    \"frame\": \"task\",\n" +
                 "    \"show_toast\": true,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false,\n" +
-                "    \"x\": " + x + ",\n" +
-                "    \"y\": " + y + "\n" +
+                "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"impossible\": {\n" +

@@ -159,21 +159,26 @@ public class TeamManager {
     }
 
     /**
-     * Donne les bannières de sélection d'équipe à un joueur (clear l'inventaire d'abord)
+     * Donne les bannières de sélection d'équipe dans l'inventaire (pas la hotbar)
      */
     public void giveTeamBanners(Player player) {
         player.getInventory().clear();
         
-        for (BingoTeam team : teams) {
+        // Slots 9-35 = inventaire principal (hors hotbar qui est 0-8)
+        // On centre les 4 bannières sur la ligne du milieu du sac
+        int[] inventorySlots = {11, 13, 15, 17}; // 2ème rangée de l'inventaire
+        
+        for (int i = 0; i < teams.size() && i < inventorySlots.length; i++) {
+            BingoTeam team = teams.get(i);
             org.bukkit.inventory.ItemStack banner = new org.bukkit.inventory.ItemStack(team.getBannerMaterial());
             org.bukkit.inventory.meta.ItemMeta meta = banner.getItemMeta();
             if (meta != null) {
                 meta.setDisplayName(team.getChatColor() + "§lÉquipe " + team.getName());
                 List<String> lore = new ArrayList<>();
-                lore.add("§7Clique droit pour rejoindre !");
                 lore.add("§7Membres: §f" + team.getPlayers().size() + "/" + maxPlayersPerTeam);
+                lore.add("");
+                lore.add("§e» Clic droit pour rejoindre");
                 meta.setLore(lore);
-                // Tag PDC pour identifier que c'est une bannière de sélection d'équipe
                 meta.getPersistentDataContainer().set(
                     new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_banner"),
                     org.bukkit.persistence.PersistentDataType.STRING,
@@ -181,7 +186,14 @@ public class TeamManager {
                 );
                 banner.setItemMeta(meta);
             }
-            player.getInventory().addItem(banner);
+            player.getInventory().setItem(inventorySlots[i], banner);
         }
+        
+        // Afficher le titre à l'écran
+        player.sendTitle(
+            "§b§lBINGO",
+            "§fChoisis ton équipe dans l'inventaire",
+            10, 80, 20
+        );
     }
 }

@@ -27,7 +27,10 @@ public class TeamCommand implements CommandExecutor {
                 player.sendMessage("§cUsage: /tj <Rouge|Bleu|Vert|Jaune>");
                 return true;
             }
-            // Simuler un /team join <arg>
+            if (teamManager.isTeamsLocked() && !player.hasPermission("bingo.admin")) {
+                player.sendMessage("§cLes équipes sont verrouillées !");
+                return true;
+            }
             String colorName = args[0];
             for (BingoTeam t : teamManager.getTeams()) {
                 if (t.getName().equalsIgnoreCase(colorName)) {
