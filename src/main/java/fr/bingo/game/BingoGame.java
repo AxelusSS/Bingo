@@ -3,7 +3,6 @@ package fr.bingo.game;
 import fr.bingo.BingoPlugin;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.*;
 
 public class BingoGame {
 
@@ -13,7 +12,6 @@ public class BingoGame {
     private long startTime;
     private Difficulty difficulty = Difficulty.HARD;
     private BingoMode mode = BingoMode.ITEMS;
-    private int scoreboardTaskId = -1;
 
     public BingoGame() {
         this.state = GameState.WAITING;
@@ -101,7 +99,6 @@ public class BingoGame {
             }
 
             destroyWaitingPlatform();
-            startScoreboard();
 
             Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
                 for (Player p : Bukkit.getOnlinePlayers()) {
@@ -129,7 +126,6 @@ public class BingoGame {
 
     public void resetGame() {
         this.state = GameState.WAITING;
-        stopScoreboard();
 
         BingoPlugin.getInstance().getTeamManager().setTeamsLocked(false);
 
@@ -176,66 +172,6 @@ public class BingoGame {
         meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
         compass.setItemMeta(meta);
         player.getInventory().setItem(8, compass); // Slot 9 (dernier)
-    }
-
-    // ── Scoreboard ──
-
-    private void startScoreboard() {
-        scoreboardTaskId = Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), this::updateScoreboard, 0L, 20L).getTaskId();
-    }
-
-    private void stopScoreboard() {
-        if (scoreboardTaskId != -1) {
-            Bukkit.getScheduler().cancelTask(scoreboardTaskId);
-            scoreboardTaskId = -1;
-        }
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-        }
-    }
-
-    private void updateScoreboard() {
-        if (state != GameState.PLAYING) return;
-
-        long elapsed = getElapsedSeconds();
-        String time = String.format("%02d:%02d", elapsed / 60, elapsed % 60);
-
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            Scoreboard sb = Bukkit.getScoreboardManager().getNewScoreboard();
-            Objective obj = sb.registerNewObjective("bingo", Criteria.DUMMY, "§6§lBingo Classique");
-            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-            int line = 10;
-            obj.getScore("§7⏱ Temps : §e" + time).setScore(line--);
-            obj.getScore("§8").setScore(line--);
-
-            fr.bingo.team.BingoTeam playerTeam = BingoPlugin.getInstance().getTeamManager().getPlayerTeam(p);
-            if (playerTeam != null && !playerTeam.getName().equals("Spectateur")) {
-                int found = playerTeam.getUnlockedObjectives().size();
-                int total = grid.getObjectives().size();
-                obj.getScore(playerTeam.getChatColor() + "▸ " + playerTeam.getName()).setScore(line--);
-                obj.getScore("  §7Items : §a" + found + "§7/" + total).setScore(line--);
-                obj.getScore("  §7Score : §e" + playerTeam.getScore()).setScore(line--);
-                obj.getScore("§7").setScore(line--);
-            }
-
-            // Classement rapide
-            obj.getScore("§f§lClassement :").setScore(line--);
-            java.util.List<fr.bingo.team.BingoTeam> sorted = new java.util.ArrayList<>();
-            for (fr.bingo.team.BingoTeam t : BingoPlugin.getInstance().getTeamManager().getTeams()) {
-                if (!t.getName().equals("Spectateur") && !t.getPlayers().isEmpty()) sorted.add(t);
-            }
-            sorted.sort((a, b) -> b.getScore() - a.getScore());
-            int rank = 1;
-            for (fr.bingo.team.BingoTeam t : sorted) {
-                if (rank > 4) break;
-                String status = t.isFinished() ? " §a✔" : "";
-                obj.getScore(" " + rank + ". " + t.getChatColor() + t.getName() + " §7" + t.getScore() + "pts" + status).setScore(line--);
-                rank++;
-            }
-
-            p.setScoreboard(sb);
-        }
     }
 
     public void pauseParty() {

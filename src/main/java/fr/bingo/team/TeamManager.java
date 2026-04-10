@@ -127,10 +127,11 @@ public class TeamManager {
      * Donne les bannières de sélection d'équipe côte à côte dans l'inventaire
      */
     public void giveTeamBanners(Player player) {
-        player.getInventory().clear();
-
-        // Slots côte à côte dans la première rangée de l'inventaire (9-12)
+        // Clear uniquement les slots bannières (pas tout l'inventaire)
         int[] inventorySlots = {9, 10, 11, 12};
+        for (int slot : inventorySlots) {
+            player.getInventory().setItem(slot, null);
+        }
 
         for (int i = 0; i < teams.size() && i < inventorySlots.length; i++) {
             BingoTeam team = teams.get(i);
@@ -151,6 +152,12 @@ public class TeamManager {
                 banner.setItemMeta(meta);
             }
             player.getInventory().setItem(inventorySlots[i], banner);
+        }
+
+        // Re-donner le compas admin si besoin
+        if (player.hasPermission("bingo.admin") &&
+            BingoPlugin.getInstance().getBingoGame().getState() == fr.bingo.game.GameState.WAITING) {
+            fr.bingo.game.BingoGame.giveAdminCompass(player);
         }
     }
 }
