@@ -68,10 +68,29 @@ public class BingoCommand implements CommandExecutor {
                 }
                 break;
             
-            case "open":
-                player.sendMessage("§eOuverture de la grille... appuyez sur Echap puis [L] pour voir les Succès ou vérifiez vos notifications.");
+            case "time":
+                if (!player.hasPermission("bingo.admin")) {
+                    player.sendMessage("§cPermission refusée.");
+                    return true;
+                }
+                if (args.length < 2) {
+                    player.sendMessage("§cUsage: /bingo time <minutes>");
+                    return true;
+                }
+                try {
+                    int minutes = Integer.parseInt(args[1]);
+                    if (minutes < 1 || minutes > 600) {
+                        player.sendMessage("§cLe temps doit être entre 1 et 600 minutes.");
+                        return true;
+                    }
+                    fr.bingo.BingoPlugin.getInstance().getConfig().set("game.default_game_time", minutes);
+                    fr.bingo.BingoPlugin.getInstance().saveConfig();
+                    player.sendMessage("§aDurée de la partie définie sur §b" + minutes + " minutes§a.");
+                } catch (NumberFormatException e) {
+                    player.sendMessage("§cNombre invalide.");
+                }
                 break;
-                
+
             default:
                 player.sendMessage("§cSous-commande inconnue.");
                 sendHelpMenu(player);
@@ -83,7 +102,7 @@ public class BingoCommand implements CommandExecutor {
 
     private void sendHelpMenu(Player player) {
         player.sendMessage("§8================ §6§lBingo §8================");
-        player.sendMessage("§e/bingo open §7- Ouvre la grille de Bingo");
+        player.sendMessage("§e[L] §7- Ouvrir la grille de Bingo (Touche Succès)");
         player.sendMessage("§e/team menu §7- Ouvre la sélection des équipes");
         player.sendMessage("§e/team join <couleur> §7- Rejoindre une équipe");
         player.sendMessage("§e/team leave §7- Quitter l'équipe");

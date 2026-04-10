@@ -77,8 +77,8 @@ public class ScoreboardManager {
                     String teamInfo = "§f" + (i + 1) + ". " + t.getChatColor() + t.getName() + " §7- §b" + t.getScore() + " pts";
                     
                     if (t.isFinished()) {
-                        long fin = t.getFinishedTime() / 1000;
-                        teamInfo += " §e[Fini en " + String.format("%02d:%02d", fin / 60, fin % 60) + "]";
+                        long elapsedSec = (t.getFinishedTime() - plugin.getBingoGame().getStartTime()) / 1000;
+                        teamInfo += " §e[" + String.format("%02d:%02d", elapsedSec / 60, elapsedSec % 60) + "]";
                     }
                     formatted = formatted.replace(ph, teamInfo);
                 }
@@ -89,7 +89,7 @@ public class ScoreboardManager {
             
             // Astuce anti-doublon: ajouter des couleurs invisibles a la fin s'il y a des lignes vides
             if (formatted.isEmpty()) {
-                formatted = "§" + "f".repeat(scoreIndex % 10); // Ligne vide unique
+                formatted = " ".repeat(Math.max(1, scoreIndex)); // Des espaces pour faire une ligne vide unique
             }
 
             // Ne pas afficher plus long que la limite Scoreboard Bukkit 1.21 (illimité en théorie mtn)

@@ -7,18 +7,17 @@ description: Un plugin reproduisant le mode de jeu Bingo.
 
 commands:
   bingo:
-    description: Commande principale du Bingo (UI, Set, Time, Gen)
-  bo:
-    description: Alias pour bingo open
+    description: Commande principale du Bingo
+    aliases: [b]
   bs:
     description: Alias pour bingo size
   tj:
     description: Alias pour team join
-  pregen:
-    description: Generer la carte a lacance
   team:
     description: Gestion des équipes
   party:
     description: Commande pour lancer ou mettre en pause la partie
-    description: Pré-générer les chunks 
+    permission: bingo.admin
+  pregen:
+    description: Pré-générer les chunks
     permission: bingo.admin

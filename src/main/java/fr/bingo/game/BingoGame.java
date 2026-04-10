@@ -38,6 +38,10 @@ public class BingoGame {
         return (System.currentTimeMillis() - startTime) / 1000;
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
     private void setupWaitingPlatform() {
         World world = Bukkit.getWorlds().get(0); // Overworld par défaut
         

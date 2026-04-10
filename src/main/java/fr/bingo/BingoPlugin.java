@@ -36,10 +36,11 @@ public class BingoPlugin extends JavaPlugin {
         // Enregistrement des commandes
         fr.bingo.commands.TeamCommand teamCmd = new fr.bingo.commands.TeamCommand();
         fr.bingo.commands.BingoCommand bingoCmd = new fr.bingo.commands.BingoCommand();
+        getCommand("team").setExecutor(teamCmd);
         getCommand("tj").setExecutor(teamCmd);
         getCommand("bingo").setExecutor(bingoCmd);
-        getCommand("bo").setExecutor(bingoCmd);
         getCommand("bs").setExecutor(bingoCmd);
+        getCommand("party").setExecutor(new fr.bingo.commands.PartyCommand());
         getCommand("pregen").setExecutor(new fr.bingo.commands.PregenCommand());
 
         // Listeners

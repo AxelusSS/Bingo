@@ -164,18 +164,17 @@ public class BingoListener implements Listener {
             }
             
             // Envoyer aux spectateurs (Admins)
-            BingoTeam specTeam = teamManager.getTeams().stream().filter(t -> t.getName().equals("Spectateur")).findFirst().orElse(null);
-            if (specTeam != null) {
-                for (java.util.UUID uuid : specTeam.getPlayers()) {
-                    Player p = org.bukkit.Bukkit.getPlayer(uuid);
-                    if (p != null) p.sendMessage("§8[§cSpy§8] " + formattedMessage);
-                }
+            BingoTeam specTeam = teamManager.getSpectatorTeam();
+            for (java.util.UUID uuid : specTeam.getPlayers()) {
+                Player p = org.bukkit.Bukkit.getPlayer(uuid);
+                if (p != null) p.sendMessage("§8[§cSpy§8] " + formattedMessage);
             }
         }
     }
     
     @EventHandler
     public void onCommandPreprocess(org.bukkit.event.player.PlayerCommandPreprocessEvent event) {
+        if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.PLAYING) return;
         String msg = event.getMessage().toLowerCase();
         if (msg.startsWith("/msg ") || msg.startsWith("/tell ") || msg.startsWith("/w ") || msg.startsWith("/r ") || msg.startsWith("/whisper ")) {
             event.setCancelled(true);
