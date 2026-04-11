@@ -20,3 +20,6 @@ commands:
   pregen:
     description: Pré-générer les chunks
     permission: bingo.admin
+  c:
+    description: Recevoir le compas de configuration admin
+    permission: bingo.admin

@@ -169,6 +169,8 @@ public class BingoCommand implements CommandExecutor {
             player.sendMessage("§c/bingo reset §7- Réinitialiser la partie");
             player.sendMessage("§c/team random <n> §7- Répartition aléatoire");
             player.sendMessage("§c/team lock §7- Verrouiller les équipes");
+            player.sendMessage("§c/team setsize <n> §7- Joueurs max par équipe");
+            player.sendMessage("§c/c §7- Recevoir le compas config");
             player.sendMessage("§7§oOu utilisez le §6§ocompas §7§opour configurer !");
         }
         player.sendMessage("§8==========================================");

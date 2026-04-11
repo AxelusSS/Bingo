@@ -5,6 +5,7 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 
 public class BingoGame {
 
@@ -16,6 +17,16 @@ public class BingoGame {
     private Difficulty difficulty = Difficulty.HARD;
     private BingoMode mode = BingoMode.ITEMS;
     private int gameDurationMinutes = 120; // durée par défaut 2h
+
+    // ── PVP ──
+    private boolean pvpEnabled = false;
+    private boolean pvpDisabled = false; // true = PVP complètement désactivé toute la partie
+    private int pvpTimerMinutes = 20;
+    private BukkitTask pvpTask;
+    private BukkitTask pvpWarningTask;
+
+    // ── End Mode ──
+    private EndMode endMode = EndMode.ALL_TEAMS;
 
     public BingoGame() {
         this.state = GameState.WAITING;
@@ -35,6 +46,18 @@ public class BingoGame {
     public long getStartTime() { return startTime; }
     public int getGameDurationMinutes() { return gameDurationMinutes; }
     public void setGameDurationMinutes(int minutes) { this.gameDurationMinutes = minutes; }
+
+    // PVP
+    public boolean isPvpEnabled() { return pvpEnabled; }
+    public void setPvpEnabled(boolean pvpEnabled) { this.pvpEnabled = pvpEnabled; }
+    public boolean isPvpDisabled() { return pvpDisabled; }
+    public void setPvpDisabled(boolean pvpDisabled) { this.pvpDisabled = pvpDisabled; }
+    public int getPvpTimerMinutes() { return pvpTimerMinutes; }
+    public void setPvpTimerMinutes(int minutes) { this.pvpTimerMinutes = Math.max(0, Math.min(minutes, 120)); }
+
+    // End Mode
+    public EndMode getEndMode() { return endMode; }
+    public void setEndMode(EndMode endMode) { this.endMode = endMode; }
 
     public long getElapsedSeconds() {
         if (state == GameState.WAITING) return 0;
@@ -58,6 +81,13 @@ public class BingoGame {
                 }
             }
         }
+
+        // Jour éternel à midi + pas de pluie pendant le hub
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        world.setTime(6000); // Midi, soleil au zénith
+        world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+        world.setStorm(false);
+        world.setThundering(false);
     }
 
     public void teleportToWaitingArea(Player player) {
@@ -88,12 +118,16 @@ public class BingoGame {
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             this.state = GameState.PLAYING;
             this.startTime = System.currentTimeMillis();
+            this.pvpEnabled = false;
 
             BingoPlugin.getInstance().getTeamManager().setTeamsLocked(true);
 
             World world = Bukkit.getWorlds().get(0);
             world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
-            world.setTime(6000);
+            world.setTime(6000); // Midi soleil au zénith
+            world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+            world.setStorm(false);
+            world.setThundering(false);
             world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
 
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -113,8 +147,61 @@ public class BingoGame {
                 }
             }, 200L);
 
+            // ── PVP Timer ──
+            schedulePvpTimer();
+
             Bukkit.broadcastMessage("§6§l►► BINGO DÉMARRE ! ◄◄ §r§eQue le meilleur gagne !");
+
+            // Annoncer le mode PVP
+            if (pvpDisabled) {
+                Bukkit.broadcastMessage("§7§l⚔ PVP : §c§lDÉSACTIVÉ §7pour toute la partie");
+            } else if (pvpTimerMinutes == 0) {
+                pvpEnabled = true;
+                Bukkit.broadcastMessage("§c§l⚔ PVP ACTIVÉ §7dès le début !");
+            } else {
+                Bukkit.broadcastMessage("§7§l⚔ PVP : §eActivation dans §b§l" + pvpTimerMinutes + " minutes");
+            }
         }, 5 * 20L);
+    }
+
+    private void schedulePvpTimer() {
+        // Annuler les tâches précédentes si existantes
+        if (pvpTask != null) pvpTask.cancel();
+        if (pvpWarningTask != null) pvpWarningTask.cancel();
+
+        if (pvpDisabled || pvpTimerMinutes == 0) return;
+
+        long timerTicks = pvpTimerMinutes * 60L * 20L;
+
+        // Warning 1 minute avant
+        if (pvpTimerMinutes > 1) {
+            long warningTicks = timerTicks - (60L * 20L);
+            pvpWarningTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                if (state != GameState.PLAYING) return;
+                Bukkit.broadcastMessage("");
+                Bukkit.broadcastMessage("§e§l  ⚠ Le PVP s'active dans 1 minute ! ⚠");
+                Bukkit.broadcastMessage("");
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1f, 0.8f);
+                    p.sendTitle("§e§l⚠ PVP", "§7Dans 1 minute...", 5, 40, 10);
+                }
+            }, warningTicks);
+        }
+
+        // Activation du PVP
+        pvpTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+            if (state != GameState.PLAYING) return;
+            pvpEnabled = true;
+            Bukkit.broadcastMessage("");
+            Bukkit.broadcastMessage("§8§m                                                §r");
+            Bukkit.broadcastMessage("  §c§l⚔ PVP ACTIVÉ ! §eBonne chance à tous !");
+            Bukkit.broadcastMessage("§8§m                                                §r");
+            Bukkit.broadcastMessage("");
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.2f);
+                p.sendTitle("§c§l⚔ PVP ACTIVÉ !", "§ePréparez-vous au combat !", 5, 50, 15);
+            }
+        }, timerTicks);
     }
 
     private void destroyWaitingPlatform() {
@@ -170,6 +257,11 @@ public class BingoGame {
 
     public void resetGame() {
         this.state = GameState.WAITING;
+        this.pvpEnabled = false;
+
+        // Annuler les tâches PVP
+        if (pvpTask != null) { pvpTask.cancel(); pvpTask = null; }
+        if (pvpWarningTask != null) { pvpWarningTask.cancel(); pvpWarningTask = null; }
 
         BingoPlugin.getInstance().getTeamManager().setTeamsLocked(false);
 
@@ -194,6 +286,9 @@ public class BingoGame {
             p.setFoodLevel(20);
             p.setSaturation(20f);
             p.setInvulnerable(false);
+            p.setExp(0f);
+            p.setLevel(0);
+            p.setTotalExperience(0);
             teleportToWaitingArea(p);
             BingoPlugin.getInstance().getTeamManager().giveTeamBanners(p);
 
@@ -204,7 +299,12 @@ public class BingoGame {
         }
 
         World world = Bukkit.getWorlds().get(0);
-        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+        // Garder jour éternel + pas de pluie pendant le hub
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        world.setTime(6000);
+        world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+        world.setStorm(false);
+        world.setThundering(false);
         world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, true);
 
         Bukkit.broadcastMessage("§6§l►► La partie a été réinitialisée ! ◄◄");

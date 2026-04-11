@@ -37,12 +37,22 @@ public class DatapackManager {
     // ── Génération ──
 
     public void generateAdvancementsDatapack(BingoGrid grid) {
+        generateAdvancementsDatapack(grid, BingoMode.ITEMS);
+    }
+
+    public void generateAdvancementsDatapack(BingoGrid grid, BingoMode mode) {
         File dataFolder = getDataFolder();
         if (dataFolder == null) return;
 
         writePackMcmeta(dataFolder.getParentFile().getParentFile().getParentFile());
         cleanDirectory(dataFolder);
-        disableVanillaAdvancements(dataFolder.getParentFile().getParentFile());
+
+        // Ne désactiver les advancements vanilla que en mode ITEMS pur
+        // En mode ACHIEVEMENTS ou MIXED, on a besoin des advancements vanilla pour la détection
+        if (mode == BingoMode.ITEMS) {
+            disableVanillaAdvancements(dataFolder.getParentFile().getParentFile());
+        }
+
         createRootAdvancement(dataFolder);
 
         List<BingoObjective> objectives = grid.getObjectives();
