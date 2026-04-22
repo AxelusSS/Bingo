@@ -47,12 +47,23 @@ public class TeamSelectorGUI implements InventoryHolder {
             inventory.setItem(i, glass);
         }
 
-        // Placer les bannières d'équipe
-        int[] teamSlots = getTeamSlots(teams.size(), invSize);
-
-        for (int i = 0; i < teams.size() && i < teamSlots.length; i++) {
-            BingoTeam team = teams.get(i);
-            inventory.setItem(teamSlots[i], createTeamBanner(team, teamSize));
+        // Placer les bannières d'équipe (seulement si pas en FFA)
+        if (!tm.isSoloMode()) {
+            int[] teamSlots = getTeamSlots(teams.size(), invSize);
+            for (int i = 0; i < teams.size() && i < teamSlots.length; i++) {
+                BingoTeam team = teams.get(i);
+                inventory.setItem(teamSlots[i], createTeamBanner(team, teamSize));
+            }
+        } else {
+            // Mode FFA : Message au centre
+            ItemStack info = createItem(Material.PAPER, "§b§lMode FFA Activé", List.of(
+                    "§7Les équipes sont désactivées.",
+                    "§7Chaque joueur joue pour soi-même.",
+                    "",
+                    "§7Vous pouvez toujours rejoindre les spectateurs",
+                    "§7en bas si vous ne souhaitez pas participer."
+            ));
+            inventory.setItem(invSize / 2, info);
         }
 
         // Spectateur (bannière blanche) — toujours en dernière position

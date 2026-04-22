@@ -18,26 +18,135 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.event.server.ServerListPingEvent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class BingoListener implements Listener {
+
+    // ── Sauvegarde d'état joueur pour la reconnexion (Tâche 1) ──
+    private static class PlayerState {
+        final ItemStack[] inventory;
+        final ItemStack[] armor;
+        final ItemStack offhand;
+        final Location location;
+        final GameMode gameMode;
+        final double health;
+        final int foodLevel;
+        final float saturation;
+        final float exp;
+        final int level;
+        final int totalExp;
+
+        PlayerState(Player p) {
+            this.inventory = p.getInventory().getStorageContents().clone();
+            this.armor = p.getInventory().getArmorContents().clone();
+            this.offhand = p.getInventory().getItemInOffHand().clone();
+            this.location = p.getLocation().clone();
+            this.gameMode = p.getGameMode();
+            this.health = p.getHealth();
+            this.foodLevel = p.getFoodLevel();
+            this.saturation = p.getSaturation();
+            this.exp = p.getExp();
+            this.level = p.getLevel();
+            this.totalExp = p.getTotalExperience();
+        }
+
+        void restore(Player p) {
+            p.teleport(location);
+            p.setGameMode(gameMode);
+            p.getInventory().setStorageContents(inventory);
+            p.getInventory().setArmorContents(armor);
+            p.getInventory().setItemInOffHand(offhand);
+            p.setHealth(Math.min(health, p.getMaxHealth()));
+            p.setFoodLevel(foodLevel);
+            p.setSaturation(saturation);
+            p.setExp(exp);
+            p.setLevel(level);
+            p.setTotalExperience(totalExp);
+        }
+    }
+
+    private final Map<UUID, PlayerState> savedStates = new ConcurrentHashMap<>();
+
+    public BingoListener() {
+        startActionBarFFTask();
+    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        BingoGame game = BingoPlugin.getInstance().getBingoGame();
         TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
 
+        BingoPlugin.getInstance().getLogger().info("[Bingo] Connexion de " + player.getName() + " - Etat: " + game.getState());
+
+        // Si la partie est lancée, on ne touche pas au joueur s'il est déjà en jeu
+        if (game.getState() == GameState.PLAYING) {
+            BingoTeam team = teamManager.getPlayerTeam(player);
+            if (team == null) {
+                team = teamManager.getPlayerTeamByName(player.getName());
+                if (team != null) BingoPlugin.getInstance().getLogger().info("[Bingo] Joueur reconnu par pseudo : " + player.getName());
+            }
+
+            if (team == null || team.getName().equals("Spectateur")) {
+                // Nouveau joueur ou spectateur rejoignant en cours de route
+                if (team == null) teamManager.joinTeam(player, teamManager.getSpectatorTeam());
+                player.setGameMode(GameMode.SPECTATOR);
+                BingoPlugin.getInstance().getLogger().info("[Bingo] Nouveau joueur/Spec forcé en spectateur : " + player.getName());
+            } else {
+                // Restaurer l'état sauvegardé (Tâche 1 — fix reconnexion)
+                PlayerState state = savedStates.remove(player.getUniqueId());
+                if (state != null) {
+                    // Délai de 1 tick pour laisser le serveur finir le login
+                    final BingoTeam finalTeam = team;
+                    Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                        state.restore(player);
+                        game.syncTeamAdvancements(player, finalTeam);
+                        BingoPlugin.getInstance().getLogger().info("[Bingo] État restauré pour " + player.getName() + " (Equipe: " + finalTeam.getName() + ")");
+                    }, 1L);
+                } else {
+                    // Pas d'état sauvegardé, mais le joueur est dans une équipe
+                    // On force le gamemode survival et on sync les advancements
+                    final BingoTeam finalTeam = team;
+                    Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                        player.setGameMode(GameMode.SURVIVAL);
+                        game.syncTeamAdvancements(player, finalTeam);
+                    }, 1L);
+                }
+                BingoPlugin.getInstance().getLogger().info("[Bingo] Reconnexion autorisée pour " + player.getName() + " (Equipe: " + team.getName() + ")");
+            }
+
+            // Débloquer tous les crafts pour le joueur qui rejoint (Tâche 4)
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                discoverAllRecipes(player);
+            }, 2L);
+
+            return; // On arrête là pour les parties en cours - SECURITE ABSOLUE
+        }
+
+        // --- Logique du HUB (WAITING) ---
         if (teamManager.getPlayerTeam(player) == null) {
             teamManager.joinTeam(player, teamManager.getSpectatorTeam());
         }
 
-        if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.WAITING) {
-            BingoPlugin.getInstance().getBingoGame().teleportToWaitingArea(player);
+        if (game.getState() == GameState.WAITING) {
+            game.teleportToWaitingArea(player);
 
             // Bannière de sélection d'équipe (slot 4, centre hotbar)
             teamManager.giveTeamBanner(player);
@@ -51,6 +160,96 @@ public class BingoListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        BingoGame game = BingoPlugin.getInstance().getBingoGame();
+        TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
+
+        // Sauvegarder l'état du joueur s'il est en partie (Tâche 1)
+        if (game.getState() == GameState.PLAYING) {
+            BingoTeam team = teamManager.getPlayerTeam(player);
+            if (team != null && !team.getName().equals("Spectateur")) {
+                savedStates.put(player.getUniqueId(), new PlayerState(player));
+                BingoPlugin.getInstance().getLogger().info("[Bingo] État sauvegardé pour " + player.getName() + " (Equipe: " + team.getName() + ")");
+            }
+        }
+    }
+
+    @EventHandler
+    public void onServerPing(ServerListPingEvent event) {
+        BingoGame game = BingoPlugin.getInstance().getBingoGame();
+        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+        
+        String mode = tm.isSoloMode() ? "FFA" : "To" + tm.getMaxPlayersPerTeam();
+        String diff = game.getDifficulty().getDisplayName();
+        String size = game.getGrid().getSize() + "x" + game.getGrid().getSize();
+        String type = game.getMode().getDisplayName();
+
+        if (game.getState() == GameState.WAITING) {
+            event.setMotd("§6§lBINGO §7» §f" + mode + " §8| §7" + type + " §8| §7" + diff + " §8| §7" + size + "\n§e§l➡ §aEn attente de joueurs...");
+        } else if (game.getState() == GameState.PLAYING) {
+            long elapsed = game.getElapsedSeconds();
+            String timer = String.format("%02d:%02d", elapsed / 60, elapsed % 60);
+            event.setMotd("§6§lBINGO §7» §cEn cours §8| §e" + timer + " §8| §b" + mode + " §8| §b" + type + "\n§e§l➡ §f" + diff + " §8| §f" + size);
+        } else {
+            event.setMotd("§6§lBINGO §7» §8Partie terminée");
+        }
+    }
+
+    @EventHandler
+    public void onPreLogin(AsyncPlayerPreLoginEvent event) {
+        BingoGame game = BingoPlugin.getInstance().getBingoGame();
+        if (game.getState() == GameState.PLAYING) {
+            UUID uuid = event.getUniqueId();
+            String name = event.getName();
+            TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+            
+            // On autorise si: présent au lancement OU dans une équipe (y compris spectateur)
+            boolean authorized = game.getStartingPlayers().contains(uuid);
+            if (!authorized) {
+                fr.bingo.team.BingoTeam team = tm.getPlayerTeam(uuid);
+                if (team == null) team = tm.getPlayerTeamByName(name);
+                
+                if (team != null) {
+                    authorized = true;
+                }
+            }
+            
+            // OPs toujours autorisés
+            if (!authorized && !org.bukkit.Bukkit.getOfflinePlayer(uuid).isOp()) {
+                long elapsed = game.getElapsedSeconds();
+                String timer = String.format("%02d:%02d", elapsed / 60, elapsed % 60);
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, 
+                    "§c§lBINGO\n\n§cUne partie est déjà lancée !\n§7Temps écoulé : §e" + timer + "\n\n§7Seuls les participants peuvent rejoindre.");
+            }
+        }
+    }
+
+    private void startActionBarFFTask() {
+        Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), () -> {
+            BingoGame game = BingoPlugin.getInstance().getBingoGame();
+            if (game.getState() != GameState.PLAYING) return;
+
+            TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+            if (tm.isSoloMode()) return;
+
+            for (BingoTeam team : tm.getActiveTeams()) {
+                int votes = team.getForfeitVoteCount();
+                if (votes > 0) {
+                    int total = team.getPlayers().size();
+                    String message = "§c§lVote FF : §e" + votes + "§7/§e" + total;
+                    for (UUID uuid : team.getPlayers()) {
+                        Player p = Bukkit.getPlayer(uuid);
+                        if (p != null) {
+                            p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
+                        }
+                    }
+                }
+            }
+        }, 0L, 20L);
+    }
+
     private void startActionBarReminder(Player player) {
         Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), () -> {
             if (!player.isOnline()) return;
@@ -58,13 +257,27 @@ public class BingoListener implements Listener {
 
             TeamManager tm = BingoPlugin.getInstance().getTeamManager();
             BingoTeam team = tm.getPlayerTeam(player);
+            boolean isSpectator = (team != null && team.getName().equals("Spectateur"));
 
-            if (team == null || team.getName().equals("Spectateur")) {
-                player.spigot().sendMessage(
-                    net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
-                    net.md_5.bungee.api.chat.TextComponent.fromLegacy("§b§l⚑ Clique sur la bannière pour choisir ton équipe ⚑")
-                );
+            String message;
+            if (tm.isSoloMode()) {
+                if (isSpectator) {
+                    message = "§e§l⚑ Clique sur l'item pour PARTICIPER ⚑";
+                } else {
+                    message = "§a§l⚑ Vous participez au Bingo Solo ⚑";
+                }
+            } else {
+                if (team == null || isSpectator) {
+                    message = "§b§l⚑ Clique sur la bannière pour choisir ton équipe ⚑";
+                } else {
+                    message = "§a§l⚑ Vous êtes prêt pour la partie ! ⚑";
+                }
             }
+
+            player.spigot().sendMessage(
+                net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
+                net.md_5.bungee.api.chat.TextComponent.fromLegacy(message)
+            );
         }, 0L, 30L);
     }
 
@@ -99,6 +312,18 @@ public class BingoListener implements Listener {
             event.setCancelled(true);
             gui.handleClick(player, event.getRawSlot(), event.isRightClick());
             return;
+        }
+
+        // Détection d'items pour le Bingo (si dans l'inventaire du joueur)
+        if (BingoPlugin.getInstance().getBingoGame().getState() == GameState.PLAYING) {
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked != null && clicked.getType() != Material.AIR) {
+                checkObjective(player, getIdentifier(clicked));
+            }
+            ItemStack cursor = event.getCursor();
+            if (cursor != null && cursor.getType() != Material.AIR) {
+                checkObjective(player, getIdentifier(cursor));
+            }
         }
 
         // GUI Team Selector — clic sur une bannière d'équipe
@@ -172,13 +397,30 @@ public class BingoListener implements Listener {
             return;
         }
 
-        // Bannière de sélection d'équipe
+        // Item de sélection d'équipe (Bannière ou Tête)
         org.bukkit.NamespacedKey teamKey = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_selector");
         if (pdc.has(teamKey, org.bukkit.persistence.PersistentDataType.BOOLEAN)) {
             event.setCancelled(true);
             if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.WAITING) return;
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-            player.openInventory(new TeamSelectorGUI().getInventory());
+
+            TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+            if (tm.isSoloMode()) {
+                // Toggle FFA : Joueur <-> Spectateur
+                BingoTeam current = tm.getPlayerTeam(player);
+                if (current != null && current.getName().equals("Spectateur")) {
+                    tm.removePlayerFromTeam(player);
+                    player.sendMessage("§a§lBingo §7» §fVous participez désormais à la partie !");
+                } else {
+                    tm.joinTeam(player, tm.getSpectatorTeam());
+                    player.sendMessage("§a§lBingo §7» §7Vous êtes désormais spectateur.");
+                }
+                // Mettre à jour l'item visuellement
+                tm.giveTeamBanner(player);
+            } else {
+                // Mode Équipe : Ouvrir le menu classique
+                player.openInventory(new TeamSelectorGUI().getInventory());
+            }
         }
     }
 
@@ -232,6 +474,7 @@ public class BingoListener implements Listener {
     // ── Détection d'objectifs ──
 
     private void checkObjective(Player player, String objectiveId) {
+        if (objectiveId == null) return;
         if (BingoPlugin.getInstance().getBingoGame().getState() != GameState.PLAYING) return;
 
         TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
@@ -246,16 +489,22 @@ public class BingoListener implements Listener {
                 if (!team.hasUnlocked(objectiveId)) {
                     team.unlockObjective(objectiveId, grid.getSize());
 
-                    new DatapackManager().refreshFoundItems(grid);
+                    // Accorder l'advancement UNIQUEMENT aux joueurs de cette équipe
+                    for (java.util.UUID uuid : team.getPlayers()) {
+                        Player tp = Bukkit.getPlayer(uuid);
+                        if (tp != null) {
+                            BingoPlugin.getInstance().getBingoGame().grantBingoAdvancement(tp, i);
+                        }
+                    }
 
                     String displayName = obj.getId().replace("_", " ");
                     String prefix = obj.isAchievement() ? "§d[Achievement] " : "";
 
-                    // En FFA : afficher le pseudo du joueur, sinon le nom d'équipe
+                    // En FFA : pseudo blanc, pas de couleur d'équipe
                     if (teamManager.isSoloMode()) {
-                        player.getServer().broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + player.getName() + " §aa trouvé " + prefix + "§e" + displayName + " §a!");
+                        Bukkit.broadcastMessage("§8[§6Bingo§8] §f" + player.getName() + " §aa trouvé " + prefix + "§e" + displayName + " §a!");
                     } else {
-                        player.getServer().broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §aa trouvé " + prefix + "§e" + displayName + " §a!");
+                        Bukkit.broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §aa trouvé " + prefix + "§e" + displayName + " §a!");
                     }
 
                     playFoundEffects(player, team);
@@ -356,7 +605,7 @@ public class BingoListener implements Listener {
         fw.setFireworkMeta(meta);
     }
 
-    private void checkEndCondition() {
+    public void checkEndCondition() {
         BingoGame game = BingoPlugin.getInstance().getBingoGame();
         TeamManager tm = BingoPlugin.getInstance().getTeamManager();
         EndMode endMode = game.getEndMode();
@@ -402,7 +651,7 @@ public class BingoListener implements Listener {
         }
     }
 
-    private void triggerGameEnd() {
+    public void triggerGameEnd() {
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             Bukkit.broadcastMessage("");
             Bukkit.broadcastMessage("§6§l✦✦✦ PARTIE TERMINÉE ! ✦✦✦");
@@ -411,8 +660,45 @@ public class BingoListener implements Listener {
 
             displayRanking();
 
-            BingoPlugin.getInstance().getBingoGame().setState(GameState.WAITING);
+            BingoPlugin.getInstance().getBingoGame().setState(GameState.FINISHED);
+
+            // Tâche 2 : Décompte de 500 secondes dans l'ActionBar avant changement de map
+            startEndCountdown();
         }, 60L);
+    }
+
+    /**
+     * Décompte de 500 secondes affiché discrètement dans l'ActionBar.
+     * À la fin, déclenche le changement de map automatique.
+     */
+    private void startEndCountdown() {
+        new BukkitRunnable() {
+            int remaining = 500;
+
+            @Override
+            public void run() {
+                if (remaining <= 0) {
+                    this.cancel();
+                    Bukkit.broadcastMessage("§6§l► Changement de carte en cours...");
+                    BingoPlugin.getInstance().getBingoGame().prepareWorldReset(null);
+                    return;
+                }
+
+                int min = remaining / 60;
+                int sec = remaining % 60;
+                String timeStr = min > 0
+                        ? "§b" + min + "m" + String.format("%02d", sec) + "s"
+                        : "§b" + sec + "s";
+                String actionBarMsg = "§7Changement de carte dans " + timeStr;
+
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                            TextComponent.fromLegacy(actionBarMsg));
+                }
+
+                remaining--;
+            }
+        }.runTaskTimer(BingoPlugin.getInstance(), 0L, 20L);
     }
 
     private void displayRanking() {
@@ -444,18 +730,49 @@ public class BingoListener implements Listener {
     @EventHandler
     public void onPickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player) {
-            checkObjective(player, event.getItem().getItemStack().getType().name());
+            checkObjective(player, getIdentifier(event.getItem().getItemStack()));
         }
     }
-
+ 
     @EventHandler
     public void onCraft(CraftItemEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
             ItemStack result = event.getCurrentItem();
             if (result != null && result.getType() != Material.AIR) {
-                checkObjective(player, result.getType().name());
+                checkObjective(player, getIdentifier(result));
             }
         }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player player) {
+            ItemStack dragged = event.getOldCursor();
+            if (dragged != null && dragged.getType() != Material.AIR) {
+                checkObjective(player, getIdentifier(dragged));
+            }
+        }
+    }
+
+    private String getIdentifier(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return null;
+        if (item.getType() == Material.POTION) {
+            if (item.hasItemMeta() && item.getItemMeta() instanceof org.bukkit.inventory.meta.PotionMeta meta) {
+                org.bukkit.potion.PotionType type = meta.getBasePotionType();
+                String name = type.name();
+                
+                if (name.contains("SWIFTNESS")) return getPotionId("SPEED", name);
+                if (name.contains("STRENGTH")) return getPotionId("STRENGTH", name);
+                if (name.contains("LEAPING")) return getPotionId("JUMP", name);
+                if (name.contains("FIRE_RES")) return getPotionId("FIRE_RES", name);
+                if (name.contains("WATER_BREATH")) return getPotionId("WATER_BREATH", name);
+                if (name.contains("REGENERATION")) return getPotionId("REGEN", name);
+                if (name.contains("INVISIBILITY")) return getPotionId("INVIS", name);
+                if (name.contains("NIGHT_VISION")) return getPotionId("NIGHT_VIS", name);
+            }
+            return "POTION";
+        }
+        return item.getType().name();
     }
 
     @EventHandler
@@ -514,6 +831,31 @@ public class BingoListener implements Listener {
         if (msg.startsWith("/msg ") || msg.startsWith("/tell ") || msg.startsWith("/w ") || msg.startsWith("/r ") || msg.startsWith("/whisper ")) {
             event.setCancelled(true);
             event.getPlayer().sendMessage("§cLes messages privés sont désactivés pendant le Bingo !");
+        }
+    }
+
+    private String getPotionId(String base, String typeName) {
+        String suffix = "_1";
+        if (typeName.startsWith("STRONG_")) suffix = "_2";
+        else if (typeName.startsWith("LONG_")) suffix = "_EXT";
+        return "POTION_" + base + suffix;
+    }
+
+    /**
+     * Tâche 4 : Découvre toutes les recettes du serveur pour un joueur.
+     * Permet d'avoir le livre de recettes entièrement débloqué.
+     */
+    public static void discoverAllRecipes(Player player) {
+        java.util.List<org.bukkit.NamespacedKey> keys = new java.util.ArrayList<>();
+        Iterator<org.bukkit.inventory.Recipe> it = Bukkit.recipeIterator();
+        while (it.hasNext()) {
+            org.bukkit.inventory.Recipe recipe = it.next();
+            if (recipe instanceof org.bukkit.Keyed keyed) {
+                keys.add(keyed.getKey());
+            }
+        }
+        if (!keys.isEmpty()) {
+            player.discoverRecipes(keys);
         }
     }
 }

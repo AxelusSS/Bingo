@@ -8,10 +8,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+
 
 public class TeamManager {
 
@@ -83,6 +84,15 @@ public class TeamManager {
 
     public void setSoloMode(boolean solo) {
         this.soloMode = solo;
+        if (solo) {
+            // Passer tout le monde en mode joueur par défaut
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                removePlayerFromTeam(player);
+                if (BingoPlugin.getInstance().getBingoGame().getState() == fr.bingo.game.GameState.WAITING) {
+                    giveTeamBanner(player);
+                }
+            }
+        }
     }
 
     public BingoTeam getSpectatorTeam() {
@@ -98,10 +108,32 @@ public class TeamManager {
     }
 
     public BingoTeam getPlayerTeam(Player player) {
+        return getPlayerTeam(player.getUniqueId());
+    }
+
+    public BingoTeam getPlayerTeam(java.util.UUID uuid) {
         for (BingoTeam team : teams) {
-            if (team.hasPlayer(player)) return team;
+            if (team.getPlayers().contains(uuid)) return team;
         }
-        if (spectatorTeam.hasPlayer(player)) return spectatorTeam;
+        if (spectatorTeam.getPlayers().contains(uuid)) return spectatorTeam;
+        return null;
+    }
+
+    public BingoTeam getPlayerTeamByName(String name) {
+        for (BingoTeam team : teams) {
+            for (java.util.UUID uuid : team.getPlayers()) {
+                org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+                if (name.equalsIgnoreCase(op.getName())) {
+                    return team;
+                }
+            }
+        }
+        for (java.util.UUID uuid : spectatorTeam.getPlayers()) {
+            org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+            if (name.equalsIgnoreCase(op.getName())) {
+                return spectatorTeam;
+            }
+        }
         return null;
     }
 
@@ -113,6 +145,10 @@ public class TeamManager {
     }
 
     public boolean joinTeam(Player player, BingoTeam team) {
+        if (soloMode && team != spectatorTeam) {
+            player.sendMessage("§cLe mode FFA est activé : les équipes sont désactivées !");
+            return false;
+        }
         if (teamsLocked && team != spectatorTeam) {
             player.sendMessage("§cLes équipes sont verrouillées !");
             return false;
@@ -128,6 +164,10 @@ public class TeamManager {
         removePlayerFromTeam(player);
         team.addPlayer(player);
         player.sendMessage(team.getChatColor() + "Vous avez rejoint l'équipe " + team.getName() + " !");
+
+        // Synchroniser les advancements déjà trouvés par l'équipe
+        BingoPlugin.getInstance().getBingoGame().syncTeamAdvancements(player, team);
+
 
         // Mettre à jour la bannière dans la hotbar
         if (BingoPlugin.getInstance().getBingoGame().getState() == fr.bingo.game.GameState.WAITING) {
@@ -187,29 +227,52 @@ public class TeamManager {
      */
     public void giveTeamBanner(Player player) {
         BingoTeam team = getPlayerTeam(player);
-        Material bannerMat;
-        String bannerName;
+        ItemStack item;
+        String name;
+        List<String> lore;
 
-        if (team == null || team.getName().equals("Spectateur")) {
-            bannerMat = Material.WHITE_BANNER;
-            bannerName = "§f§lChoisir une équipe";
+        if (soloMode) {
+            // Mode FFA : Toggle Joueur (Vert) / Spectateur (Rouge)
+            boolean isSpectator = (team != null && team.getName().equals("Spectateur"));
+            
+            if (isSpectator) {
+                item = new ItemStack(Material.RED_BANNER);
+                name = "§6§lMode Spectateur";
+                lore = List.of("§7Vous observez la partie.", "", "§e► Clic pour PARTICIPER");
+            } else {
+                item = new ItemStack(Material.LIME_BANNER);
+                name = "§a§lMode Joueur";
+                lore = List.of("§7Vous participez à la partie.", "", "§e► Clic pour passer SPECTATEUR");
+            }
         } else {
-            bannerMat = team.getBannerMaterial();
-            bannerName = team.getChatColor() + "§lÉquipe " + team.getName();
+            // Mode Équipe : Sélection classique
+            Material bannerMat;
+            if (team == null || team.getName().equals("Spectateur")) {
+                bannerMat = Material.WHITE_BANNER;
+                name = "§f§lChoisir une équipe";
+            } else {
+                bannerMat = team.getBannerMaterial();
+                name = team.getChatColor() + "§lÉquipe " + team.getName();
+            }
+            item = new ItemStack(bannerMat);
+            lore = List.of("§7Clic droit pour choisir/changer d'équipe");
         }
 
-        ItemStack banner = new ItemStack(bannerMat);
-        ItemMeta meta = banner.getItemMeta();
-        meta.setDisplayName(bannerName);
-        meta.setLore(List.of("§7Clic droit pour choisir/changer d'équipe"));
-        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
-        // Marquer comme bannière d'équipe
-        org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_selector");
-        meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
-        banner.setItemMeta(meta);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setLore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+            // Marquer comme item de sélection
+            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "team_selector");
+            meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
+            item.setItemMeta(meta);
+        }
 
-        player.getInventory().setItem(4, banner); // Slot 5 (milieu hotbar)
+        player.getInventory().setItem(4, item);
     }
+
+
 
     /**
      * Ancienne méthode — redirige vers la nouvelle

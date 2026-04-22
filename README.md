@@ -47,6 +47,14 @@ Interface complète via le **compas** dans la hotbar :
 ### 🌤 Environnement
 - **Jour éternel** à midi (soleil au zénith) pendant le hub ET la partie
 - **Pas de pluie** — Météo désactivée en permanence
+- **Livre de recettes débloqué** automatiquement dès le lancement de la partie
+- Désactivation de la **Locator Bar** (barre de tracking 1.21) par défaut pour éviter l'anti-jeu
+
+### ✨ Dernières Nouveautés / Corrections
+- **Fix Reconnexion :** Les joueurs qui se déconnectent en pleine partie conservent leur inventaire, vie, faim, XP et position à la reconnexion sans être téléportés au spawn.
+- **Fin de partie (500s) :** Un décompte discret dans l'ActionBar s'affiche à la fin, suivi d'un redémarrage automatique du serveur (nouveau monde généré).
+- **Amélioration du mode FFA :** Lors de la complétion d'une ligne/colonne, c'est le pseudo du joueur qui s'affiche en blanc, et non plus "L'équipe".
+- **Refonte des alertes PVP :** Les annonces agressives avec sons et "Titles" sont remplacées par des messages discrets dans le chat (20m, 10m, 5m, 1m, 10s... 1s).
 
 ## 📋 Commandes
 

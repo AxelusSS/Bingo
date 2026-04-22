@@ -42,7 +42,6 @@ public class BingoObjectivePool {
         pool.add(new PoolEntry(Material.CAKE, Difficulty.EASY));
         pool.add(new PoolEntry(Material.PUMPKIN_PIE, Difficulty.EASY));
         pool.add(new PoolEntry(Material.MELON_SLICE, Difficulty.EASY));
-        pool.add(new PoolEntry(Material.COOKED_BEEF, Difficulty.EASY));
         pool.add(new PoolEntry(Material.COOKED_PORKCHOP, Difficulty.EASY));
         pool.add(new PoolEntry(Material.COOKED_CHICKEN, Difficulty.EASY));
         pool.add(new PoolEntry(Material.GOLDEN_CARROT, Difficulty.EASY));
@@ -61,7 +60,6 @@ public class BingoObjectivePool {
         pool.add(new PoolEntry(Material.DRIED_KELP_BLOCK, Difficulty.EASY));
         pool.add(new PoolEntry(Material.BAMBOO, Difficulty.EASY));
         pool.add(new PoolEntry(Material.SCAFFOLDING, Difficulty.EASY));
-        pool.add(new PoolEntry(Material.LEAD, Difficulty.EASY));
 
         pool.add(new PoolEntry(Material.IRON_INGOT, Difficulty.EASY));
         pool.add(new PoolEntry(Material.COPPER_INGOT, Difficulty.EASY));
@@ -138,6 +136,7 @@ public class BingoObjectivePool {
         pool.add(new PoolEntry(Material.GLOWSTONE_DUST, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.MAGMA_CREAM, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.CRYING_OBSIDIAN, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.LEAD, Difficulty.MEDIUM));
 
         // Redstone
         pool.add(new PoolEntry(Material.OBSERVER, Difficulty.MEDIUM));
@@ -151,7 +150,27 @@ public class BingoObjectivePool {
         pool.add(new PoolEntry(Material.DIAMOND_CHESTPLATE, Difficulty.HARD));
         pool.add(new PoolEntry(Material.DIAMOND_LEGGINGS, Difficulty.HARD));
         pool.add(new PoolEntry(Material.DIAMOND_BOOTS, Difficulty.HARD));
+        
+        // --- POTIONS HARD (Vitesse, Force, Saut, Feu, Respi) ---
+        pool.add(new PoolEntry("POTION_SPEED_1", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_SPEED_2", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_SPEED_EXT", Material.POTION, Difficulty.HARD));
+        
+        pool.add(new PoolEntry("POTION_STRENGTH_1", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_STRENGTH_2", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_STRENGTH_EXT", Material.POTION, Difficulty.HARD));
+        
+        pool.add(new PoolEntry("POTION_JUMP_1", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_JUMP_2", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_JUMP_EXT", Material.POTION, Difficulty.HARD));
 
+        pool.add(new PoolEntry("POTION_FIRE_RES_1", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_FIRE_RES_EXT", Material.POTION, Difficulty.HARD));
+        
+        pool.add(new PoolEntry("POTION_WATER_BREATH_1", Material.POTION, Difficulty.HARD));
+        pool.add(new PoolEntry("POTION_WATER_BREATH_EXT", Material.POTION, Difficulty.HARD));
+
+        pool.add(new PoolEntry(Material.ENDER_EYE, Difficulty.HARD));
         pool.add(new PoolEntry(Material.BLAZE_ROD, Difficulty.HARD));
         pool.add(new PoolEntry(Material.GHAST_TEAR, Difficulty.HARD));
         pool.add(new PoolEntry(Material.ENDER_PEARL, Difficulty.HARD));
@@ -191,6 +210,18 @@ public class BingoObjectivePool {
         pool.add(new PoolEntry(Material.NETHERITE_INGOT, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.END_CRYSTAL, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.BEACON, Difficulty.EXTREME));
+        
+        // --- POTIONS EXTREME (Regen, Invi, NightVision) ---
+        pool.add(new PoolEntry("POTION_REGEN_1", Material.POTION, Difficulty.EXTREME));
+        pool.add(new PoolEntry("POTION_REGEN_2", Material.POTION, Difficulty.EXTREME));
+        pool.add(new PoolEntry("POTION_REGEN_EXT", Material.POTION, Difficulty.EXTREME));
+        
+        pool.add(new PoolEntry("POTION_INVIS_1", Material.POTION, Difficulty.EXTREME));
+        pool.add(new PoolEntry("POTION_INVIS_EXT", Material.POTION, Difficulty.EXTREME));
+        
+        pool.add(new PoolEntry("POTION_NIGHT_VIS_1", Material.POTION, Difficulty.EXTREME));
+        pool.add(new PoolEntry("POTION_NIGHT_VIS_EXT", Material.POTION, Difficulty.EXTREME));
+        
         pool.add(new PoolEntry(Material.SHULKER_SHELL, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.SHULKER_BOX, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.ENCHANTED_GOLDEN_APPLE, Difficulty.EXTREME));

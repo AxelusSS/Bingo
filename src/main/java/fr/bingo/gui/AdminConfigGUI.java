@@ -10,6 +10,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.Sound;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
@@ -117,6 +118,7 @@ public class AdminConfigGUI implements InventoryHolder {
         inventory.setItem(19, teamItem);
 
         // Slot 21 : PVP Config (sous-menu)
+
         boolean pvpOff = game.isPvpDisabled();
         int pvpTimer = game.getPvpTimerMinutes();
         String pvpLabel;
@@ -154,12 +156,26 @@ public class AdminConfigGUI implements InventoryHolder {
                         "§e► Clic pour changer"));
         inventory.setItem(23, endItem);
 
-        // Slot 25 : Lock/Unlock Teams
-        boolean locked = tm.isTeamsLocked();
-        ItemStack lockItem = createItem(locked ? Material.BARRIER : Material.OAK_DOOR,
-                locked ? "§c§l🔒 Équipes Verrouillées" : "§a§l🔓 Équipes Ouvertes",
-                List.of("§7Clic pour " + (locked ? "déverrouiller" : "verrouiller")));
-        inventory.setItem(25, lockItem);
+        // Slot 25 : KeepInventory
+        boolean ki = game.isKeepInventory();
+        ItemStack kiItem = createItem(ki ? Material.CHEST : Material.SKELETON_SKULL,
+                ki ? "§a§l📦 KeepInventory : ON" : "§c§l📦 KeepInventory : OFF",
+                List.of("§7Garder l'inventaire à la mort",
+                        "",
+                        ki ? "§a▸ Activé (toutes dimensions)" : "§c▸ Désactivé",
+                        "",
+                        "§e► Clic pour basculer"));
+        inventory.setItem(25, kiItem);
+
+        // Slot 40 : Réinitialisation du monde
+        ItemStack resetItem = createItemHidden(Material.TNT, "§c§l💥 RÉINITIALISER LA MAP 💥",
+                List.of("§7Supprime la carte actuelle au redémarrage",
+                        "§7et génère un nouveau monde aléatoire.",
+                        "",
+                        "§c⚠ ACTION IRRÉVERSIBLE ⚠",
+                        "",
+                        "§e► Clic pour lancer la procédure"));
+        inventory.setItem(40, resetItem);
 
         // ── Rangée 4 (slots 27-35) : Actions ──
 
@@ -180,9 +196,9 @@ public class AdminConfigGUI implements InventoryHolder {
         inventory.setItem(31, startItem);
 
         // Slot 33 : RESET
-        ItemStack resetItem = createItem(Material.TNT, "§c§l↻ RESET",
+        ItemStack resetGameItem = createItem(Material.TNT, "§c§l↻ RESET",
                 List.of("§7Réinitialise la partie", "§7Remet tout à zéro"));
-        inventory.setItem(33, resetItem);
+        inventory.setItem(33, resetGameItem);
     }
 
     /**
@@ -233,12 +249,16 @@ public class AdminConfigGUI implements InventoryHolder {
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }
-            case 25 -> { // Lock/Unlock
-                boolean locked = tm.isTeamsLocked();
-                tm.setTeamsLocked(!locked);
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+            case 25 -> {
+                game.setKeepInventory(!game.isKeepInventory());
+                player.playSound(player.getLocation(), Sound.BLOCK_LEVER_CLICK, 1f, 1.2f);
                 refresh(player);
             }
+            case 40 -> {
+                game.prepareWorldReset(player);
+                player.closeInventory();
+            }
+
             case 29 -> { // Générer
                 player.closeInventory();
                 game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());

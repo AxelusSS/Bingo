@@ -16,10 +16,16 @@ import java.util.Set;
 /**
  * Gère la génération du datapack d'advancements pour la grille Bingo.
  *
- * - Tous les items : tick (auto-complete → visible, doré)
- * - Items trouvés : frame "challenge" (étoile ★) via regénération
- * - Grille en chaîne linéaire (root → c0 → c1 → ...)
- * - Per-team tracking via le /bg GUI (BingoGridGUI)
+ * Structure :
+ *   root (Nether Star, tick trigger, auto-complete)
+ *    ├── r0c0 (impossible trigger → grantable per-player)
+ *    ├── r0c1 (impossible trigger)
+ *    ... 
+ *    └── r4c4 (impossible trigger)
+ *
+ * Tous les items sont des enfants directs du root pour un affichage en grille (x,y).
+ * Les items utilisent le trigger "impossible" → ne s'auto-complète pas.
+ * On accorde les advancements par joueur via le code Java.
  */
 public class DatapackManager {
 
@@ -33,6 +39,7 @@ public class DatapackManager {
     public static String getAdvancementIdFromIndex(int index, int gridSize) {
         return getAdvancementId(index / gridSize, index % gridSize);
     }
+
 
     // ── Génération ──
 
@@ -48,33 +55,31 @@ public class DatapackManager {
         cleanDirectory(dataFolder);
 
         // Ne désactiver les advancements vanilla que en mode ITEMS pur
-        // En mode ACHIEVEMENTS ou MIXED, on a besoin des advancements vanilla pour la détection
         if (mode == BingoMode.ITEMS) {
             disableVanillaAdvancements(dataFolder.getParentFile().getParentFile());
         }
 
         createRootAdvancement(dataFolder);
-
         List<BingoObjective> objectives = grid.getObjectives();
         int size = grid.getSize();
 
-        // Collecter les items déjà trouvés (toutes équipes confondues)
-        Set<String> foundIds = collectFoundIds();
-
+        // Créer les chaînes horizontales : Étoile -> C0 -> C1 -> C2 -> C3 -> C4 -> FIN
         for (int row = 0; row < size; row++) {
+            String lastParent = namespace + ":root";
+
             for (int col = 0; col < size; col++) {
                 int index = row * size + col;
                 if (index >= objectives.size()) break;
 
                 BingoObjective obj = objectives.get(index);
                 String advId = getAdvancementId(row, col);
-                String parent = col == 0
-                        ? namespace + ":root"
-                        : namespace + ":" + getAdvancementId(row, col - 1);
-                boolean found = foundIds.contains(obj.getId());
 
-                createItemAdvancement(dataFolder, obj, advId, parent, found);
+                createItemAdvancement(dataFolder, obj, advId, lastParent, row, col);
+                lastParent = namespace + ":" + advId; // Le suivant dépend du précédent
             }
+
+            // Ajouter le point technique de fin de ligne pour forcer la visibilité
+            createTechnicalRowEnd(dataFolder, row, size, lastParent);
         }
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
@@ -86,62 +91,36 @@ public class DatapackManager {
     }
 
     /**
-     * Rafraîchit les frames : items trouvés → challenge (★), non trouvés → task.
-     * Debounce intégré (10 ticks).
+     * Rafraîchit les advancements pour l'affichage global (compat).
+     * Avec le nouveau système per-player, cette méthode n'est plus nécessaire
+     * pour changer les frames — on l'appelle uniquement pour le debounced reload.
      */
     public void refreshFoundItems(BingoGrid grid) {
-        File dataFolder = getDataFolder();
-        if (dataFolder == null) return;
-
-        Set<String> foundIds = collectFoundIds();
-        List<BingoObjective> objectives = grid.getObjectives();
-        int size = grid.getSize();
-
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
-                int index = row * size + col;
-                if (index >= objectives.size()) break;
-
-                BingoObjective obj = objectives.get(index);
-                String advId = getAdvancementId(row, col);
-                String parent = col == 0
-                        ? namespace + ":root"
-                        : namespace + ":" + getAdvancementId(row, col - 1);
-                boolean found = foundIds.contains(obj.getId());
-
-                createItemAdvancement(dataFolder, obj, advId, parent, found);
-            }
-        }
-
+        // Pas de regeneration de JSON nécessaire — le tracking est per-player
+        // On garde un debounced reload au cas où
         if (pendingReloadTask != -1) {
             Bukkit.getScheduler().cancelTask(pendingReloadTask);
         }
         pendingReloadTask = Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            enableAndReload();
             pendingReloadTask = -1;
         }, 10L).getTaskId();
     }
 
-    private Set<String> collectFoundIds() {
-        Set<String> foundIds = new HashSet<>();
-        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
-        for (BingoTeam team : tm.getTeams()) {
-            foundIds.addAll(team.getUnlockedObjectives());
-        }
-        return foundIds;
-    }
-
     // ── JSON ──
 
-    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent, boolean found) {
+    /**
+     * Crée un item advancement avec trigger impossible.
+     * Enfant direct d'un relay → visible dès le chargement.
+     * Marqué comme "found" seulement par code Java (per-player).
+     */
+    private void createItemAdvancement(File dir, BingoObjective obj, String advId, String parent, int row, int col) {
         String iconId = "minecraft:" + obj.getDisplayMaterial().name().toLowerCase();
         String name = obj.getId().replace("_", " ").replace("/", " > ");
         if (!name.isEmpty()) name = name.substring(0, 1).toUpperCase() + name.substring(1);
 
-        String frame = found ? "challenge" : "task";
-        String desc = found
-                ? "\\u00a7a\\u2714 Trouv\\u00e9 !"
-                : (obj.isAchievement() ? "\\u00a7d[Achievement] " + name : "Obtenir " + name);
+        String desc = obj.isAchievement()
+                ? "\\u00a7d[Achievement] " + name
+                : "Obtenir " + name;
 
         saveFile(dir, advId + ".json",
                 "{\n" +
@@ -150,15 +129,18 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"" + iconId + "\" },\n" +
                 "    \"title\": \"" + name + "\",\n" +
                 "    \"description\": \"" + desc + "\",\n" +
-                "    \"frame\": \"" + frame + "\",\n" +
+                "    \"frame\": \"challenge\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
+                "    \"hidden\": false,\n" +
+                "    \"x\": " + (double) (col * 1.5) + ",\n" +
+                "    \"y\": " + (double) (row * 1.5) + "\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
-                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
+                "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
                 "  }\n" +
                 "}");
+
     }
 
     private void createRootAdvancement(File dir) {
@@ -167,12 +149,28 @@ public class DatapackManager {
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": \"Bingo Classique\",\n" +
-                "    \"description\": \"Appuyez sur [L] ou tapez /bg\",\n" +
+                "    \"description\": \"Utilisez /bg pour voir votre progression\",\n" +
                 "    \"background\": \"minecraft:block/light_blue_concrete_powder\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
+                "    \"hidden\": false,\n" +
+                "    \"x\": -1.5,\n" +
+                "    \"y\": 3.0\n" +
                 "  },\n" +
+                "  \"criteria\": {\n" +
+                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
+                "  }\n" +
+                "}");
+    }
+
+    /**
+     * Crée un point technique "réussi" à la fin de chaque ligne.
+     * Force la visibilité de toute la ligne parente.
+     */
+    private void createTechnicalRowEnd(File dir, int row, int size, String parent) {
+        saveFile(dir, "row_end_" + row + ".json",
+                "{\n" +
+                "  \"parent\": \"" + parent + "\",\n" +
                 "  \"criteria\": {\n" +
                 "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
                 "  }\n" +

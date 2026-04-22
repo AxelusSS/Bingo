@@ -14,6 +14,9 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +82,12 @@ public class BingoGridGUI implements InventoryHolder {
             if (meta != null) {
                 String displayName = obj.getId().replace("_", " ");
                 displayName = displayName.substring(0, 1).toUpperCase() + displayName.substring(1);
+                
+                // --- Gestion spéciale des POTIONS ---
+                if (obj.getId().startsWith("POTION_")) {
+                    applyPotionMeta(item, obj.getId());
+                    displayName = getPotionDisplayName(obj.getId());
+                }
 
                 // Vérifier si une équipe a trouvé cet item
                 List<String> lore = new ArrayList<>();
@@ -88,7 +97,13 @@ public class BingoGridGUI implements InventoryHolder {
                 for (BingoTeam team : teamManager.getTeams()) {
                     if (team.hasUnlocked(obj.getId())) {
                         foundByAny = true;
-                        lore.add(team.getChatColor() + "  ✔ Équipe " + team.getName());
+                        if (teamManager.isSoloMode() && !team.getPlayers().isEmpty()) {
+                            // En FFA, on affiche le pseudo du joueur en blanc
+                            org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(team.getPlayers().get(0));
+                            lore.add("§f  ✔ " + (op.getName() != null ? op.getName() : team.getName()));
+                        } else {
+                            lore.add(team.getChatColor() + "  ✔ Équipe " + team.getName());
+                        }
                         if (team == myTeam) foundByMyTeam = true;
                     }
                 }
@@ -140,6 +155,67 @@ public class BingoGridGUI implements InventoryHolder {
             }
         }
         return slots;
+    }
+
+    // --- UTILS POTIONS ---
+    
+    private void applyPotionMeta(ItemStack item, String id) {
+        PotionMeta meta = (PotionMeta) item.getItemMeta();
+        if (meta == null) return;
+        
+        PotionType type;
+        
+        if (id.contains("SPEED")) {
+            if (id.endsWith("_2")) type = PotionType.STRONG_SWIFTNESS;
+            else if (id.endsWith("_EXT")) type = PotionType.LONG_SWIFTNESS;
+            else type = PotionType.SWIFTNESS;
+        } else if (id.contains("STRENGTH")) {
+            if (id.endsWith("_2")) type = PotionType.STRONG_STRENGTH;
+            else if (id.endsWith("_EXT")) type = PotionType.LONG_STRENGTH;
+            else type = PotionType.STRENGTH;
+        } else if (id.contains("JUMP")) {
+            if (id.endsWith("_2")) type = PotionType.STRONG_LEAPING;
+            else if (id.endsWith("_EXT")) type = PotionType.LONG_LEAPING;
+            else type = PotionType.LEAPING;
+        } else if (id.contains("FIRE_RES")) {
+            if (id.endsWith("_EXT")) type = PotionType.LONG_FIRE_RESISTANCE;
+            else type = PotionType.FIRE_RESISTANCE;
+        } else if (id.contains("WATER_BREATH")) {
+            if (id.endsWith("_EXT")) type = PotionType.LONG_WATER_BREATHING;
+            else type = PotionType.WATER_BREATHING;
+        } else if (id.contains("REGEN")) {
+            if (id.endsWith("_2")) type = PotionType.STRONG_REGENERATION;
+            else if (id.endsWith("_EXT")) type = PotionType.LONG_REGENERATION;
+            else type = PotionType.REGENERATION;
+        } else if (id.contains("INVIS")) {
+            if (id.endsWith("_EXT")) type = PotionType.LONG_INVISIBILITY;
+            else type = PotionType.INVISIBILITY;
+        } else if (id.contains("NIGHT_VIS")) {
+            if (id.endsWith("_EXT")) type = PotionType.LONG_NIGHT_VISION;
+            else type = PotionType.NIGHT_VISION;
+        } else {
+            type = PotionType.AWKWARD;
+        }
+        
+        meta.setBasePotionType(type);
+        item.setItemMeta(meta);
+    }
+    
+    private String getPotionDisplayName(String id) {
+        String base = "Potion de ";
+        if (id.contains("SPEED")) base += "Vitesse";
+        else if (id.contains("STRENGTH")) base += "Force";
+        else if (id.contains("JUMP")) base += "Saut";
+        else if (id.contains("FIRE_RES")) base += "Resistance au Feu";
+        else if (id.contains("WATER_BREATH")) base += "Respiration Aquatique";
+        else if (id.contains("REGEN")) base += "Regeneration";
+        else if (id.contains("INVIS")) base += "Invisibilite";
+        else if (id.contains("NIGHT_VIS")) base += "Vision Nocturne";
+        
+        if (id.endsWith("_2")) base += " II";
+        if (id.endsWith("_EXT")) base += " (Allongee)";
+        
+        return "§d" + base;
     }
 
     private ItemStack createBackground(Material material) {

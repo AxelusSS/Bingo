@@ -114,13 +114,28 @@ public class TeamConfigGUI implements InventoryHolder {
                             "§e⊕ Clic droit §7→ §a+5",
                             "",
                             "§7Pas de limite !")));
+            // (Contenu existant de la configuration d'équipe...)
         } else {
-            ItemStack infoItem = createItem(Material.PAPER, "§7§oEn mode Solo/FFA",
-                    List.of("§7Chaque joueur joue seul",
-                            "§7Pas besoin de configurer",
-                            "§7le nombre d'équipes"));
+            // ── Slot 13 : Info Solo ──
+            ItemStack infoItem = createItem(Material.PAPER, "§b§lMode Solo / FFA Actif",
+                    List.of("§7Chaque joueur joue seul.",
+                            "§7Le sélecteur de team en hotbar",
+                            "§7permet de passer en Spectateur.",
+                            "",
+                            "§7Pas de configuration d'équipes nécessaire."));
             inventory.setItem(13, infoItem);
         }
+
+        // ── Slot 8 : Verrouiller les équipes ──
+        boolean locked = tm.isTeamsLocked();
+        ItemStack lockItem = createItem(locked ? Material.BARRIER : Material.OAK_DOOR,
+                locked ? "§c§l🔒 Équipes Verrouillées" : "§a§l🔓 Équipes Ouvertes",
+                List.of("§7Empêche les joueurs de changer",
+                        "§7d'équipe via la bannière.",
+                        "",
+                        "§e► Clic pour " + (locked ? "déverrouiller" : "verrouiller")));
+        inventory.setItem(8, lockItem);
+
 
         // ── Slot 6 : Random Teams ──
         if (!isSolo) {
@@ -171,6 +186,17 @@ public class TeamConfigGUI implements InventoryHolder {
         switch (slot) {
             case 2 -> { // Toggle Solo/Équipe
                 tm.setSoloMode(!tm.isSoloMode());
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                
+                // Rafraîchir les bannières de TOUS les joueurs
+                for (Player online : Bukkit.getOnlinePlayers()) {
+                    tm.giveTeamBanner(online);
+                }
+                
+                refresh(player);
+            }
+            case 8 -> { // Lock/Unlock
+                tm.setTeamsLocked(!tm.isTeamsLocked());
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }

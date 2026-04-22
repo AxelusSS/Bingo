@@ -20,6 +20,7 @@ public class BingoTeam {
     private long lastScoreTime;
     private boolean isFinished;
     private long finishedTime;
+    private final java.util.Set<UUID> forfeitVotes;
 
     public BingoTeam(String name, ChatColor chatColor, Material bannerMaterial) {
         this.name = name;
@@ -32,6 +33,7 @@ public class BingoTeam {
         this.score = 0;
         this.lastScoreTime = 0;
         this.isFinished = false;
+        this.forfeitVotes = new java.util.HashSet<>();
     }
 
     public String getName() {
@@ -104,6 +106,7 @@ public class BingoTeam {
         this.score = 0;
         this.lastScoreTime = 0;
         this.isFinished = false;
+        this.forfeitVotes.clear();
     }
     
     public List<String> getUnlockedObjectives() {
@@ -129,7 +132,15 @@ public class BingoTeam {
 
     private void checkLinesAndColumns(int size) {
         java.util.List<fr.bingo.game.BingoObjective> grid = fr.bingo.BingoPlugin.getInstance().getBingoGame().getGrid().getObjectives();
-        
+        boolean isFFA = fr.bingo.BingoPlugin.getInstance().getTeamManager().isSoloMode();
+
+        // Récupérer le nom du joueur pour le mode FFA
+        String playerName = "???";
+        if (isFFA && !players.isEmpty()) {
+            org.bukkit.OfflinePlayer op = org.bukkit.Bukkit.getOfflinePlayer(players.get(0));
+            if (op.getName() != null) playerName = op.getName();
+        }
+
         for (int r = 0; r < size; r++) {
             if (!completedRows.contains(r)) {
                 boolean rowDone = true;
@@ -143,7 +154,11 @@ public class BingoTeam {
                 if (rowDone) {
                     completedRows.add(r);
                     addScore(3);
-                    org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! " + chatColor + "L'équipe " + name + " §ea terminé la ligne " + (r + 1) + " !");
+                    if (isFFA) {
+                        org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! §f" + playerName + " §ea terminé la ligne " + (r + 1) + " !");
+                    } else {
+                        org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! " + chatColor + "L'équipe " + name + " §ea terminé la ligne " + (r + 1) + " !");
+                    }
                 }
             }
         }
@@ -161,10 +176,39 @@ public class BingoTeam {
                 if (colDone) {
                     completedCols.add(c);
                     addScore(3);
-                    org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! " + chatColor + "L'équipe " + name + " §ea terminé la colonne " + (c + 1) + " !");
+                    if (isFFA) {
+                        org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! §f" + playerName + " §ea terminé la colonne " + (c + 1) + " !");
+                    } else {
+                        org.bukkit.Bukkit.broadcastMessage("§e§l+3 Points ! " + chatColor + "L'équipe " + name + " §ea terminé la colonne " + (c + 1) + " !");
+                    }
                 }
             }
         }
         // La détection de fin (blackout) est gérée dans BingoListener.checkTeamCompletion
+    }
+
+    public void toggleForfeitVote(java.util.UUID uuid) {
+        if (forfeitVotes.contains(uuid)) {
+            forfeitVotes.remove(uuid);
+        } else {
+            forfeitVotes.add(uuid);
+        }
+    }
+
+    public boolean hasVotedForfeit(java.util.UUID uuid) {
+        return forfeitVotes.contains(uuid);
+    }
+
+    public int getForfeitVoteCount() {
+        return forfeitVotes.size();
+    }
+
+    public boolean isAllForfeited() {
+        if (players.isEmpty()) return false;
+        return forfeitVotes.size() >= players.size();
+    }
+
+    public void clearForfeitVotes() {
+        forfeitVotes.clear();
     }
 }

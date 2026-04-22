@@ -18,6 +18,8 @@ game:
   default_teams_count: 4
   announce_in_chat: true
   pregen_radius: 500
+  random-map-on-start: true # Supprime et régénère une map aléatoire à chaque redémarrage
+
 
 scoreboard:
   title: "§6§lBINGO CLASSIQUE"

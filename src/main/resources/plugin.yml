@@ -4,6 +4,7 @@ main: fr.bingo.BingoPlugin
 api-version: 1.21
 authors: [Antigravity]
 description: Un plugin reproduisant le mode de jeu Bingo.
+load: STARTUP
 
 commands:
   bingo:
@@ -16,10 +17,15 @@ commands:
   tj:
     description: Alias pour team join
   team:
-    description: Gestion des équipes
+    description: Gestion des equipes
   pregen:
-    description: Pré-générer les chunks
+    description: Pre-generer les chunks
     permission: bingo.admin
   c:
     description: Recevoir le compas de configuration admin
     permission: bingo.admin
+  ff:
+    description: Voter pour abandonner la partie
+  game:
+    description: Voir les reglages de la partie
+    aliases: [info]
