@@ -91,6 +91,10 @@ public class BingoListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        
+        // Custom Join Message
+        event.setJoinMessage("§8[§a+§8] §f" + player.getName());
+        
         BingoGame game = BingoPlugin.getInstance().getBingoGame();
         TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
 
@@ -163,6 +167,10 @@ public class BingoListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        
+        // Custom Quit Message
+        event.setQuitMessage("§8[§c-§8] §f" + player.getName());
+        
         BingoGame game = BingoPlugin.getInstance().getBingoGame();
         TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
 

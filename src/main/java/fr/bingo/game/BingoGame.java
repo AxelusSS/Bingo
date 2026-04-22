@@ -270,6 +270,9 @@ public class BingoGame {
                 } else if (remaining <= 0) {
                     pvpEnabled = true;
                     Bukkit.broadcastMessage("§c⚔ Le PVP est désormais activé !");
+                    for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
+                        p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.0f);
+                    }
                     this.cancel();
                     return;
                 }
