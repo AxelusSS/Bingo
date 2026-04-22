@@ -23,7 +23,11 @@ public class FFCommand implements CommandExecutor {
 
         BingoGame game = BingoPlugin.getInstance().getBingoGame();
         if (game.getState() != GameState.PLAYING) {
-            player.sendMessage("§cLa partie n'est pas lancée !");
+            if (game.getState() == GameState.FINISHED) {
+                player.sendMessage("§cLa partie est déjà terminée !");
+            } else {
+                player.sendMessage("§cLa partie n'est pas en cours !");
+            }
             return true;
         }
 

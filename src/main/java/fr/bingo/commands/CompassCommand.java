@@ -23,8 +23,8 @@ public class CompassCommand implements CommandExecutor {
         }
 
         BingoGame game = BingoPlugin.getInstance().getBingoGame();
-        if (game.getState() != GameState.WAITING) {
-            player.sendMessage("§c§l✘ §cLa partie a déjà commencé ! Le compas n'est disponible qu'en phase d'attente.");
+        if (game.getState() != GameState.WAITING && game.getState() != GameState.FINISHED) {
+            player.sendMessage("§c§l✘ §cLa partie a déjà commencé ! Le compas n'est disponible qu'en phase d'attente ou après la partie.");
             return true;
         }
 

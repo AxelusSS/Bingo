@@ -46,7 +46,12 @@ public class BingoGame {
 
     public BingoGrid getGrid() { return grid; }
     public GameState getState() { return state; }
-    public void setState(GameState state) { this.state = state; }
+    public void setState(GameState state) {
+        if (this.state == GameState.PLAYING && (state == GameState.PAUSED || state == GameState.FINISHED)) {
+            this.pausedElapsed = getElapsedSeconds();
+        }
+        this.state = state;
+    }
     public Difficulty getDifficulty() { return difficulty; }
     public void setDifficulty(Difficulty d) { this.difficulty = d; }
     public BingoMode getMode() { return mode; }
@@ -73,7 +78,7 @@ public class BingoGame {
 
     public long getElapsedSeconds() {
         if (state == GameState.WAITING) return 0;
-        if (state == GameState.PAUSED) return pausedElapsed;
+        if (state == GameState.PAUSED || state == GameState.FINISHED) return pausedElapsed;
         return (System.currentTimeMillis() - startTime) / 1000;
     }
 

@@ -662,18 +662,18 @@ public class BingoListener implements Listener {
 
             BingoPlugin.getInstance().getBingoGame().setState(GameState.FINISHED);
 
-            // Tâche 2 : Décompte de 500 secondes dans l'ActionBar avant changement de map
+            // Tâche 2 : Décompte de 300 secondes dans l'ActionBar avant changement de map
             startEndCountdown();
         }, 60L);
     }
 
     /**
-     * Décompte de 500 secondes affiché discrètement dans l'ActionBar.
+     * Décompte de 300 secondes (5 minutes) affiché discrètement dans l'ActionBar.
      * À la fin, déclenche le changement de map automatique.
      */
     private void startEndCountdown() {
         new BukkitRunnable() {
-            int remaining = 500;
+            int remaining = 300;
 
             @Override
             public void run() {
