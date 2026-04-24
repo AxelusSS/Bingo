@@ -18,10 +18,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class RouletteGUI {
+import org.bukkit.inventory.InventoryHolder;
+
+public class RouletteGUI implements InventoryHolder {
+
+    private final Inventory inventory;
+
+    public RouletteGUI() {
+        this.inventory = Bukkit.createInventory(this, 27, "§6§lRoulette Bingo");
+    }
+
+    @Override
+    public Inventory getInventory() {
+        return inventory;
+    }
 
     public static void startRoulette(BingoObjective target, Runnable onComplete) {
-        Inventory inv = Bukkit.createInventory(null, 27, "§6§lRoulette Bingo");
+        RouletteGUI gui = new RouletteGUI();
+        Inventory inv = gui.getInventory();
 
         ItemStack bg = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta bgMeta = bg.getItemMeta();
@@ -89,7 +103,7 @@ public class RouletteGUI {
             targetMeta.setDisplayName(prefix + target.getId().replace("_", " "));
             targetItem.setItemMeta(targetMeta);
         }
-        sequence.set(totalShifts + 4, targetItem); // Slot 4 est le milieu de la ligne 9-17
+        sequence.set(totalShifts + 3, targetItem); // Slot 4 (milieu) s'arrête sur index totalShifts + 3
 
         new BukkitRunnable() {
             int ticks = 0;

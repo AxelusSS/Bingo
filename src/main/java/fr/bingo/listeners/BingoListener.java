@@ -301,6 +301,12 @@ public class BingoListener implements Listener {
             return;
         }
 
+        // GUI Roulette
+        if (event.getInventory().getHolder() instanceof fr.bingo.gui.RouletteGUI) {
+            event.setCancelled(true);
+            return;
+        }
+
         // GUI Admin Config
         if (event.getInventory().getHolder() instanceof AdminConfigGUI gui) {
             event.setCancelled(true);
