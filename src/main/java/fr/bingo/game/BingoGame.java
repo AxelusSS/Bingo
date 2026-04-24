@@ -134,94 +134,108 @@ public class BingoGame {
     private void finalizeStart() {
         this.state = GameState.PLAYING;
         this.startTime = System.currentTimeMillis();
-            this.pvpEnabled = false;
+        this.pvpEnabled = false;
 
-            TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
 
-            // ── FFA : auto-assigner chaque joueur à sa propre équipe ──
-            if (tm.isSoloMode()) {
-                setupFfaTeams(tm);
-            }
+        // ── FFA : auto-assigner chaque joueur à sa propre équipe ──
+        if (tm.isSoloMode()) {
+            setupFfaTeams(tm);
+        }
 
-            tm.setTeamsLocked(true);
+        tm.setTeamsLocked(true);
 
-            // Enregistrer les joueurs présents au lancement
-            startingPlayers.clear();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                startingPlayers.add(p.getUniqueId());
-            }
+        // Enregistrer les joueurs présents au lancement
+        startingPlayers.clear();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            startingPlayers.add(p.getUniqueId());
+        }
 
-            World world = Bukkit.getWorlds().get(0);
-            world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
-            world.setTime(6000); // Midi soleil au zénith
-            world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
-            world.setStorm(false);
-            world.setThundering(false);
-            world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+        World world = Bukkit.getWorlds().get(0);
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+        world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+        world.setStorm(false);
+        world.setThundering(false);
+        world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
 
-            // Météo fixée pour toutes les dimensions
-            for (World w : Bukkit.getWorlds()) {
-                w.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
-                w.setStorm(false);
-                w.setThundering(false);
-            }
+        // Météo fixée pour toutes les dimensions
+        for (World w : Bukkit.getWorlds()) {
+            w.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+            w.setStorm(false);
+            w.setThundering(false);
+        }
 
-            // Tâche 3 : Désactiver la Locator Bar (barre de tracking joueurs sur la barre d'XP)
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule locator_bar false");
+        // Désactiver la Locator Bar
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule locator_bar false");
 
-            // Lancement des scénarios
-            BingoPlugin.getInstance().getScenarioManager().onGameStart();
+        // Lancement des scénarios
+        BingoPlugin.getInstance().getScenarioManager().onGameStart();
 
-            // Révoquer tous les advancements bingo pour un tracking per-team propre
+        // Conditionner la logique Bingo
+        boolean isBingoMode = BingoPlugin.getInstance().getScenarioManager()
+                .isScenarioEnabled(fr.bingo.scenario.BingoScenario.class);
+
+        if (isBingoMode) {
             revokeAllBingoAdvancements();
+        }
 
+        StarterInventoryManager starterInv = BingoPlugin.getInstance().getStarterInventoryManager();
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
+            p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
+            p.setGameMode(GameMode.SURVIVAL);
+            p.getInventory().clear();
+
+            // Donner l'inventaire de départ personnalisé
+            starterInv.giveToPlayer(p);
+
+            p.setInvulnerable(true);
+
+            // Débloquer tous les crafts du livre de recettes
+            fr.bingo.listeners.BingoListener.discoverAllRecipes(p);
+        }
+
+        destroyWaitingPlatform();
+
+        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
             for (Player p : Bukkit.getOnlinePlayers()) {
-                p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
-                p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
-                p.setGameMode(GameMode.SURVIVAL);
-                p.getInventory().clear();
-                p.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.COOKED_BEEF, 64));
-                p.setInvulnerable(true);
-
-                // Tâche 4 : Débloquer tous les crafts du livre de recettes
-                fr.bingo.listeners.BingoListener.discoverAllRecipes(p);
+                p.setInvulnerable(false);
             }
+        }, 200L);
 
-            destroyWaitingPlatform();
-
-            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.setInvulnerable(false);
-                }
-            }, 200L);
-
-            // ── Scanner d'inventaire périodique (safety net) ──
+        // Scanner d'inventaire (seulement si Bingo actif)
+        if (isBingoMode) {
             startInventoryScanner();
+        }
 
-            // ── PVP Timer ──
-            schedulePvpTimer();
+        // ── PVP Timer ──
+        schedulePvpTimer();
 
-            // ── Game Duration Timer ──
-            scheduleGameDurationTimer();
+        // ── Game Duration Timer ──
+        scheduleGameDurationTimer();
 
-            Bukkit.broadcastMessage("§6§l►► BINGO DÉMARRE ! ◄◄ §r§eQue le meilleur gagne !");
+        // ── Bordure ──
+        BingoPlugin.getInstance().getBorderManager().startBorder();
 
-            // Annoncer le mode
-            if (tm.isSoloMode()) {
-                Bukkit.broadcastMessage("§d§l🎮 Mode : §f§lFFA §7— Chacun pour soi !");
-            } else {
-                Bukkit.broadcastMessage("§b§l🎮 Mode : §f§lÉQUIPES §7— " + tm.getActiveTeamCount() + " équipes");
-            }
+        Bukkit.broadcastMessage("§6§l►► LA PARTIE DÉMARRE ! ◄◄ §r§eQue le meilleur gagne !");
 
-            // Annoncer le mode PVP
-            if (pvpDisabled) {
-                Bukkit.broadcastMessage("§7§l⚔ PVP : §c§lDÉSACTIVÉ §7pour toute la partie");
-            } else if (pvpTimerMinutes == 0) {
-                pvpEnabled = true;
-                Bukkit.broadcastMessage("§c§l⚔ PVP ACTIVÉ §7dès le début !");
-            } else {
-                Bukkit.broadcastMessage("§7§l⚔ PVP : §eActivation dans §b§l" + pvpTimerMinutes + " minutes");
-            }
+        // Annoncer le mode
+        if (tm.isSoloMode()) {
+            Bukkit.broadcastMessage("§d§l🎮 Mode : §f§lFFA §7— Chacun pour soi !");
+        } else {
+            Bukkit.broadcastMessage("§b§l🎮 Mode : §f§lÉQUIPES §7— " + tm.getActiveTeamCount() + " équipes");
+        }
+
+        // Annoncer le mode PVP
+        if (pvpDisabled) {
+            Bukkit.broadcastMessage("§7§l⚔ PVP : §c§lDÉSACTIVÉ §7pour toute la partie");
+        } else if (pvpTimerMinutes == 0) {
+            pvpEnabled = true;
+            Bukkit.broadcastMessage("§c§l⚔ PVP ACTIVÉ §7dès le début !");
+        } else {
+            Bukkit.broadcastMessage("§7§l⚔ PVP : §eActivation dans §b§l" + pvpTimerMinutes + " minutes");
+        }
     }
 
     private void schedulePvpTimer() {
@@ -471,7 +485,7 @@ public class BingoGame {
      * Révoque tous les advancements bingoclassique pour tous les joueurs.
      * Appelé au start pour un tracking propre per-team.
      */
-    private void revokeAllBingoAdvancements() {
+    public void revokeAllBingoAdvancements() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
             while (it.hasNext()) {

@@ -24,7 +24,7 @@ public class AdminConfigGUI implements InventoryHolder {
     private final Inventory inventory;
 
     public AdminConfigGUI() {
-        this.inventory = Bukkit.createInventory(this, 45, "§6§l⚙ Configuration Bingo");
+        this.inventory = Bukkit.createInventory(this, 45, "§6§l⚙ Configuration UHC");
         populate();
     }
 
@@ -43,76 +43,9 @@ public class AdminConfigGUI implements InventoryHolder {
             inventory.setItem(row * 9 + 8, border);
         }
 
-        // Slot 4 : Sauvegardes / Presets
-        ItemStack presetItem = createItemHidden(Material.BOOK, "§d§lSauvegardes & Presets",
-                List.of("§7Gérer les configurations",
-                        "§7du jeu.",
-                        "",
-                        "§e► Clic pour ouvrir"));
-        inventory.setItem(4, presetItem);
+        // ── Rangée 2 (slots 10-16) : Paramètres principaux ──
 
-        // ── Rangée 2 (slots 9-17) : Paramètres de jeu ──
-
-        // Slot 10 : Taille de la grille
-        int size = game.getGrid().getSize();
-        String sizeStr = size == 1 ? "ROULETTE" : size + "x" + size;
-        ItemStack sizeItem = createItem(Material.MAP, "§e§lTaille : §b" + sizeStr,
-                List.of("§7Clic pour changer",
-                        "",
-                        (size == 1 ? "§b▸ " : "§7  ") + "Roulette (1 seul objectif)",
-                        (size == 3 ? "§b▸ " : "§7  ") + "3x3",
-                        (size == 5 ? "§b▸ " : "§7  ") + "5x5",
-                        (size == 7 ? "§b▸ " : "§7  ") + "7x7"));
-        inventory.setItem(10, sizeItem);
-
-        // Slot 12 : Difficulté
-        Difficulty diff = game.getDifficulty();
-        Material diffMat = switch (diff) {
-            case EASY -> Material.LIME_DYE;
-            case MEDIUM -> Material.YELLOW_DYE;
-            case HARD -> Material.RED_DYE;
-            case EXTREME -> Material.WITHER_SKELETON_SKULL;
-        };
-        ItemStack diffItem = createItem(diffMat, "§e§lDifficulté : " + diff.getColor() + diff.getDisplayName(),
-                List.of("§7Clic pour changer",
-                        "",
-                        (diff == Difficulty.EASY ? "§a▸ " : "§7  ") + "Facile",
-                        (diff == Difficulty.MEDIUM ? "§e▸ " : "§7  ") + "Normal",
-                        (diff == Difficulty.HARD ? "§c▸ " : "§7  ") + "Difficile",
-                        (diff == Difficulty.EXTREME ? "§4▸ " : "§7  ") + "Extrême"));
-        inventory.setItem(12, diffItem);
-
-        // Slot 14 : Mode
-        BingoMode mode = game.getMode();
-        Material modeMat = switch (mode) {
-            case ITEMS -> Material.CHEST;
-            case ACHIEVEMENTS -> Material.DRAGON_EGG;
-            case MIXED -> Material.ENDER_CHEST;
-        };
-        ItemStack modeItem = createItem(modeMat, "§e§lMode : " + mode.getColor() + mode.getDisplayName(),
-                List.of("§7Clic pour changer",
-                        "",
-                        (mode == BingoMode.ITEMS ? "§b▸ " : "§7  ") + "Items",
-                        (mode == BingoMode.ACHIEVEMENTS ? "§d▸ " : "§7  ") + "Achievements",
-                        (mode == BingoMode.MIXED ? "§6▸ " : "§7  ") + "Mixte"));
-        inventory.setItem(14, modeItem);
-
-        // Slot 16 : Durée
-        int duration = game.getGameDurationMinutes();
-        String durationStr = duration >= 60
-                ? (duration / 60) + "h" + (duration % 60 > 0 ? String.format("%02d", duration % 60) : "")
-                : duration + "min";
-        ItemStack timeItem = createItem(Material.CLOCK, "§e§lDurée : §b" + durationStr,
-                List.of("§7Clic pour changer",
-                        "",
-                        (duration == 60 ? "§b▸ " : "§7  ") + "1h",
-                        (duration == 90 ? "§b▸ " : "§7  ") + "1h30",
-                        (duration == 120 ? "§b▸ " : "§7  ") + "2h"));
-        inventory.setItem(16, timeItem);
-
-        // ── Rangée 3 (slots 18-26) : Équipes / PVP / Fin ──
-
-        // Slot 19 : Équipes (sous-menu)
+        // Slot 10 : Équipes (sous-menu)
         String teamLabel;
         if (tm.isSoloMode()) {
             teamLabel = "§a§lSOLO / FFA";
@@ -125,10 +58,33 @@ public class AdminConfigGUI implements InventoryHolder {
                         tm.isSoloMode() ? "§a  Mode Solo / FFA" : "§b  " + tm.getActiveTeamCount() + " équipes de " + tm.getMaxPlayersPerTeam() + " joueurs",
                         "",
                         "§e► Clic pour ouvrir le sous-menu"));
-        inventory.setItem(19, teamItem);
+        inventory.setItem(10, teamItem);
 
-        // Slot 21 : PVP Config (sous-menu)
+        // Slot 12 : Bordure Config
+        BorderManager bm = BingoPlugin.getInstance().getBorderManager();
+        ItemStack borderItem = createItem(Material.GLASS, "§e§l📏 Bordure",
+                List.of("§7Taille initiale : §b" + bm.getInitialSize() + "x" + bm.getInitialSize(),
+                        "§7Taille finale : §b" + bm.getFinalSize() + "x" + bm.getFinalSize(),
+                        "§7Réduction après : §b" + bm.getTimeBeforeShrinkMinutes() + " min",
+                        "§7Temps de réduction : §b" + bm.getShrinkTimeMinutes() + " min",
+                        "",
+                        "§e► Clic pour configurer"));
+        inventory.setItem(12, borderItem);
 
+        // Slot 14 : Durée
+        int duration = game.getGameDurationMinutes();
+        String durationStr = duration >= 60
+                ? (duration / 60) + "h" + (duration % 60 > 0 ? String.format("%02d", duration % 60) : "")
+                : duration + "min";
+        ItemStack timeItem = createItem(Material.CLOCK, "§e§lDurée : §b" + durationStr,
+                List.of("§7Temps avant la fin ou le meetup",
+                        "",
+                        (duration == 60 ? "§b▸ " : "§7  ") + "1h",
+                        (duration == 90 ? "§b▸ " : "§7  ") + "1h30",
+                        (duration == 120 ? "§b▸ " : "§7  ") + "2h"));
+        inventory.setItem(14, timeItem);
+
+        // Slot 16 : PVP Config (sous-menu)
         boolean pvpOff = game.isPvpDisabled();
         int pvpTimer = game.getPvpTimerMinutes();
         String pvpLabel;
@@ -144,14 +100,46 @@ public class AdminConfigGUI implements InventoryHolder {
             pvpMat = Material.IRON_SWORD;
         }
         ItemStack pvpItem = createItemHidden(pvpMat, "§e§l⚔ PVP : " + pvpLabel,
-                List.of("§7Configurer le PVP",
+                List.of("§7Configurer l'activation du PVP",
                         "",
                         pvpOff ? "§c  PVP désactivé" : (pvpTimer == 0 ? "§a  PVP dès le début" : "§e  PVP après " + pvpTimer + " min"),
                         "",
                         "§e► Clic pour ouvrir le sous-menu"));
-        inventory.setItem(21, pvpItem);
+        inventory.setItem(16, pvpItem);
 
-        // Slot 23 : Mode de fin
+        // ── Rangée 3 (slots 19-25) : Scénarios / Presets / Inv / Fin ──
+
+        // Slot 19 : Scénarios
+        int activeScenarios = 0;
+        for (fr.bingo.scenario.Scenario s : BingoPlugin.getInstance().getScenarioManager().getScenarios()) {
+            if (s.isEnabled()) activeScenarios++;
+        }
+        ItemStack scenariosItem = createItemHidden(Material.COMMAND_BLOCK,
+                "§e§l📜 Scénarios",
+                List.of("§7Gérer les scénarios actifs",
+                        "",
+                        "§b▸ " + activeScenarios + " scénario(s) activé(s)",
+                        "",
+                        "§e► Clic pour ouvrir le sous-menu"));
+        inventory.setItem(19, scenariosItem);
+
+        // Slot 21 : Presets
+        ItemStack presetItem = createItemHidden(Material.BOOK, "§d§lSauvegardes & Presets",
+                List.of("§7Gérer les configurations",
+                        "§7du jeu.",
+                        "",
+                        "§e► Clic pour ouvrir"));
+        inventory.setItem(21, presetItem);
+
+        // Slot 23 : Inventaire de départ
+        ItemStack invItem = createItemHidden(Material.CHEST, "§a§l🎒 Inventaire de Départ",
+                List.of("§7Configurer l'inventaire donné",
+                        "§7aux joueurs au lancement.",
+                        "",
+                        "§e► Clic pour éditer l'inventaire"));
+        inventory.setItem(23, invItem);
+
+        // Slot 25 : Mode de fin
         EndMode endMode = game.getEndMode();
         Material endMat = endMode == EndMode.ALL_TEAMS ? Material.HOPPER : endMode == EndMode.LAST_STANDING ? Material.GOLDEN_SWORD : Material.GOLD_INGOT;
         String endLabel = endMode == EndMode.ALL_TEAMS
@@ -165,22 +153,19 @@ public class AdminConfigGUI implements InventoryHolder {
                         (endMode == EndMode.FIRST_TO_FINISH ? "§e▸ " : "§7  ") + "Première équipe à finir",
                         "",
                         "§e► Clic pour changer"));
-        inventory.setItem(23, endItem);
+        inventory.setItem(25, endItem);
 
-        // Slot 25 : Scénarios
-        int activeScenarios = 0;
-        for (fr.bingo.scenario.Scenario s : BingoPlugin.getInstance().getScenarioManager().getScenarios()) {
-            if (s.isEnabled()) activeScenarios++;
-        }
-        
-        ItemStack scenariosItem = createItemHidden(Material.COMMAND_BLOCK,
-                "§e§l📜 Scénarios",
-                List.of("§7Gérer les scénarios actifs",
-                        "",
-                        "§b▸ " + activeScenarios + " scénario(s) activé(s)",
-                        "",
-                        "§e► Clic pour ouvrir le sous-menu"));
-        inventory.setItem(25, scenariosItem);
+        // ── Rangée 4 (slots 27-35) : Actions ──
+
+        // Slot 31 : START
+        ItemStack startItem = createItem(Material.LIME_CONCRETE, "§a§l▶ LANCER LA PARTIE",
+                List.of("§7Démarre le décompte et lance la partie !"));
+        inventory.setItem(31, startItem);
+
+        // Slot 33 : RESET
+        ItemStack resetGameItem = createItem(Material.TNT, "§c§l↻ RESET",
+                List.of("§7Réinitialise la partie", "§7Remet tout à zéro"));
+        inventory.setItem(33, resetGameItem);
 
         // Slot 40 : Réinitialisation du monde
         ItemStack resetItem = createItemHidden(Material.TNT, "§c§l💥 RÉINITIALISER LA MAP 💥",
@@ -191,32 +176,6 @@ public class AdminConfigGUI implements InventoryHolder {
                         "",
                         "§e► Clic pour lancer la procédure"));
         inventory.setItem(40, resetItem);
-
-        // ── Rangée 4 (slots 27-35) : Actions ──
-
-        // Slot 29 : GÉNÉRER
-        ItemStack genItem = createItem(Material.NETHER_STAR, "§a§l✦ GÉNÉRER LA GRILLE",
-                List.of("§7Génère une nouvelle grille",
-                        "§7avec les paramètres actuels",
-                        "",
-                        "§7Taille : §b" + sizeStr,
-                        "§7Difficulté : " + diff.getColor() + diff.getDisplayName(),
-                        "§7Mode : " + mode.getColor() + mode.getDisplayName(),
-                        "§7Durée : §b" + durationStr,
-                        "",
-                        "§e► Clic gauche pour générer",
-                        "§d► Clic droit pour configurer la pool"));
-        inventory.setItem(29, genItem);
-
-        // Slot 31 : START
-        ItemStack startItem = createItem(Material.LIME_CONCRETE, "§a§l▶ LANCER LA PARTIE",
-                List.of("§7Démarre le décompte et lance le Bingo !"));
-        inventory.setItem(31, startItem);
-
-        // Slot 33 : RESET
-        ItemStack resetGameItem = createItem(Material.TNT, "§c§l↻ RESET",
-                List.of("§7Réinitialise la partie", "§7Remet tout à zéro"));
-        inventory.setItem(33, resetGameItem);
     }
 
     /**
@@ -228,93 +187,54 @@ public class AdminConfigGUI implements InventoryHolder {
         TeamManager tm = BingoPlugin.getInstance().getTeamManager();
 
         switch (slot) {
-            case 4 -> { // Presets
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                player.openInventory(new fr.bingo.gui.PresetConfigGUI(player).getInventory());
+            case 10 -> { // Équipes → sous-menu
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.openInventory(new TeamConfigGUI().getInventory());
             }
-            case 10 -> { // Taille grille
-                int current = game.getGrid().getSize();
-                int next = current == 1 ? 3 : current == 3 ? 5 : current == 5 ? 7 : 1;
-                game.getGrid().setSize(next);
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                refresh(player);
+            case 12 -> { // Bordure → sous-menu
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.openInventory(new BorderConfigGUI().getInventory());
             }
-            case 12 -> { // Difficulté
-                Difficulty[] vals = Difficulty.values();
-                int next = (game.getDifficulty().ordinal() + 1) % vals.length;
-                game.setDifficulty(vals[next]);
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                refresh(player);
-            }
-            case 14 -> { // Mode
-                game.setMode(game.getMode().next());
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                refresh(player);
-            }
-            case 16 -> { // Durée
+            case 14 -> { // Durée
                 int current = game.getGameDurationMinutes();
                 int next = current == 60 ? 90 : current == 90 ? 120 : 60;
                 game.setGameDurationMinutes(next);
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }
-            case 19 -> { // Équipes → sous-menu
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                player.openInventory(new TeamConfigGUI().getInventory());
-            }
-            case 21 -> { // PVP → sous-menu
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+            case 16 -> { // PVP → sous-menu
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 player.openInventory(new PvpConfigGUI().getInventory());
             }
-            case 23 -> { // Mode de fin
-                game.setEndMode(game.getEndMode().next());
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                refresh(player);
-            }
-            case 25 -> {
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+            case 19 -> { // Scénarios
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 player.openInventory(new ScenarioConfigGUI().getInventory());
             }
-            case 40 -> {
-                game.prepareWorldReset(player);
-                player.closeInventory();
+            case 21 -> { // Presets
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.openInventory(new PresetConfigGUI(player).getInventory());
             }
-
-            case 29 -> { // Générer
-                if (isRightClick) {
-                    player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
-                    player.openInventory(new PoolConfigGUI(0).getInventory());
-                } else {
-                    player.closeInventory();
-                    game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
-                    new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
-                    
-                    if (game.getGrid().getSize() == 1) {
-                        // Roulette mode: lance la roulette pour révéler l'objectif
-                        fr.bingo.gui.RouletteGUI.startRoulette(game.getGrid().getObjectives().get(0), () -> {
-                            player.sendMessage("§a§lL'objectif a été tiré au sort !");
-                        });
-                    } else {
-                        String sName = game.getGrid().getSize() + "x" + game.getGrid().getSize();
-                        player.sendMessage("§a§lGrille générée ! §7(" + sName +
-                                ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
-                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
-                    }
-                }
+            case 23 -> { // Inv départ
+                player.closeInventory();
+                BingoPlugin.getInstance().getStarterInventoryManager().enterEditMode(player);
+            }
+            case 25 -> { // Mode de fin
+                game.setEndMode(game.getEndMode().next());
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                refresh(player);
             }
             case 31 -> { // Start
                 player.closeInventory();
-                
-                if (game.getGrid().getObjectives().isEmpty()) {
-                    player.sendMessage("§c§lERREUR : §cGénère d'abord une grille !");
-                    return;
-                }
                 game.startParty();
             }
             case 33 -> { // Reset
                 player.closeInventory();
                 game.resetGame();
-                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1f);
+                player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1f);
+            }
+            case 40 -> { // World reset
+                game.prepareWorldReset(player);
+                player.closeInventory();
             }
         }
     }

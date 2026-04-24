@@ -29,3 +29,6 @@ commands:
   game:
     description: Voir les reglages de la partie
     aliases: [info]
+  finish:
+    description: Sauvegarde l'inventaire de départ en mode édition.
+    permission: bingo.admin

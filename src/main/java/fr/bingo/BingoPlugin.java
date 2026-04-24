@@ -3,6 +3,8 @@ package fr.bingo;
 import org.bukkit.plugin.java.JavaPlugin;
 import fr.bingo.database.DatabaseManager;
 import java.util.logging.Logger;
+import fr.bingo.game.StarterInventoryManager;
+import fr.bingo.game.BorderManager;
 
 public class BingoPlugin extends JavaPlugin {
 
@@ -14,6 +16,8 @@ public class BingoPlugin extends JavaPlugin {
     private fr.bingo.game.BingoGame bingoGame;
     private fr.bingo.listeners.BingoListener bingoListener;
     private fr.bingo.scenario.ScenarioManager scenarioManager;
+    private StarterInventoryManager starterInventoryManager;
+    private BorderManager borderManager;
 
     @Override
     public void onLoad() {
@@ -66,6 +70,8 @@ public class BingoPlugin extends JavaPlugin {
         this.teamManager = new fr.bingo.team.TeamManager();
         this.bingoGame = new fr.bingo.game.BingoGame();
         this.scenarioManager = new fr.bingo.scenario.ScenarioManager();
+        this.starterInventoryManager = new StarterInventoryManager();
+        this.borderManager = new BorderManager();
 
         // Enregistrement des commandes
         fr.bingo.commands.TeamCommand teamCmd = new fr.bingo.commands.TeamCommand();
@@ -79,6 +85,7 @@ public class BingoPlugin extends JavaPlugin {
         getCommand("c").setExecutor(new fr.bingo.commands.CompassCommand());
         getCommand("ff").setExecutor(new fr.bingo.commands.FFCommand());
         getCommand("game").setExecutor(new fr.bingo.commands.GameInfoCommand());
+        getCommand("finish").setExecutor(new fr.bingo.commands.FinishCommand());
 
         // Listeners
         this.bingoListener = new fr.bingo.listeners.BingoListener();
@@ -157,5 +164,13 @@ public class BingoPlugin extends JavaPlugin {
 
     public fr.bingo.scenario.ScenarioManager getScenarioManager() {
         return scenarioManager;
+    }
+
+    public StarterInventoryManager getStarterInventoryManager() {
+        return starterInventoryManager;
+    }
+
+    public BorderManager getBorderManager() {
+        return borderManager;
     }
 }

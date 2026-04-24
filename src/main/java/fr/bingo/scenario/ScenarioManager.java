@@ -26,6 +26,11 @@ public class ScenarioManager {
         scenarios.add(new SharedHealthScenario());
         scenarios.add(new GraveScenario());
         scenarios.add(new SuperHeroScenario());
+        scenarios.add(new BingoScenario());
+        scenarios.add(new LiteGappleScenario());
+        scenarios.add(new TripleOresScenario());
+        scenarios.add(new BoostLootScenario());
+        scenarios.add(new MiniNetherScenario());
         
         // Initialiser les events pour les scénarios activés par défaut
         for (Scenario s : scenarios) {
