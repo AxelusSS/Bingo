@@ -28,6 +28,9 @@ public class PresetData {
     public List<String> disabledPoolItems = new ArrayList<>();
     public List<String> activeScenarios = new ArrayList<>();
     
+    // Icone
+    public String icon = "ENCHANTED_BOOK";
+    
     public PresetData() {
     }
 }

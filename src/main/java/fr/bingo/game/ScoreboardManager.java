@@ -168,15 +168,31 @@ public class ScoreboardManager {
         if (playerTeam != null && !playerTeam.getName().equals("Spectateur")) {
             int found = playerTeam.getUnlockedObjectives().size();
             int total = game.getGrid().getObjectives().size();
-            if (total > 0) {
-                lines.add("§fProgression: §a" + found + "§7/" + total);
+            
+            if (game.getGrid().getSize() == 1) {
+                // Mode Roulette
+                if (playerTeam.isFinished()) {
+                    long elapsedSec = (playerTeam.getFinishedTime() - game.getStartTime()) / 1000;
+                    String ft = String.format("%02d:%02d", elapsedSec / 60, elapsedSec % 60);
+                    lines.add("§fTemps: §a" + ft);
+                } else {
+                    lines.add("§fObjectif: §cEn recherche...");
+                }
+            } else {
+                if (total > 0) {
+                    lines.add("§fProgression: §a" + found + "§7/" + total);
+                } else {
+                    lines.add("§fProgression: §7-");
+                }
+                lines.add("§fPoints: §e" + playerTeam.getScore());
+            }
+        } else {
+            if (game.getGrid().getSize() == 1) {
+                lines.add("§fObjectif: §7-");
             } else {
                 lines.add("§fProgression: §7-");
+                lines.add("§fPoints: §7-");
             }
-            lines.add("§fPoints: §e" + playerTeam.getScore());
-        } else {
-            lines.add("§fProgression: §7-");
-            lines.add("§fPoints: §7-");
         }
 
         // Espace
@@ -207,7 +223,11 @@ public class ScoreboardManager {
                     String finishTime = String.format("%02d:%02d", min, sec);
                     line = prefix + entry.name + " §7- §a" + finishTime;
                 } else {
-                    line = prefix + entry.name + " §7- §b" + entry.score;
+                    if (game.getGrid().getSize() == 1) {
+                        line = prefix + entry.name + " §7- §bEn cours";
+                    } else {
+                        line = prefix + entry.name + " §7- §b" + entry.score;
+                    }
                 }
                 lines.add(line);
             }

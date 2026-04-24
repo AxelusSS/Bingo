@@ -34,10 +34,20 @@ public class PresetConfigGUI implements InventoryHolder {
         
         // --- COMMUNITY PRESETS ---
         int slot = 0;
-        for (String name : community.keySet()) {
+        for (Map.Entry<String, PresetData> entry : community.entrySet()) {
             if (slot > 8) break;
             
-            ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
+            String name = entry.getKey();
+            PresetData data = entry.getValue();
+            
+            Material mat = Material.ENCHANTED_BOOK;
+            try {
+                if (data.icon != null && !data.icon.isEmpty()) {
+                    mat = Material.valueOf(data.icon.toUpperCase());
+                }
+            } catch (Exception ignored) {}
+            
+            ItemStack item = new ItemStack(mat);
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
                 meta.setDisplayName("§b§l" + name);

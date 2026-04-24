@@ -55,9 +55,11 @@ public class AdminConfigGUI implements InventoryHolder {
 
         // Slot 10 : Taille de la grille
         int size = game.getGrid().getSize();
-        ItemStack sizeItem = createItem(Material.MAP, "§e§lTaille : §b" + size + "x" + size,
+        String sizeStr = size == 1 ? "ROULETTE" : size + "x" + size;
+        ItemStack sizeItem = createItem(Material.MAP, "§e§lTaille : §b" + sizeStr,
                 List.of("§7Clic pour changer",
                         "",
+                        (size == 1 ? "§b▸ " : "§7  ") + "Roulette (1 seul objectif)",
                         (size == 3 ? "§b▸ " : "§7  ") + "3x3",
                         (size == 5 ? "§b▸ " : "§7  ") + "5x5",
                         (size == 7 ? "§b▸ " : "§7  ") + "7x7"));
@@ -151,15 +153,16 @@ public class AdminConfigGUI implements InventoryHolder {
 
         // Slot 23 : Mode de fin
         EndMode endMode = game.getEndMode();
-        Material endMat = endMode == EndMode.ALL_TEAMS ? Material.HOPPER : Material.GOLDEN_SWORD;
+        Material endMat = endMode == EndMode.ALL_TEAMS ? Material.HOPPER : endMode == EndMode.LAST_STANDING ? Material.GOLDEN_SWORD : Material.GOLD_INGOT;
         String endLabel = endMode == EndMode.ALL_TEAMS
                 ? "§a§lToutes les équipes"
-                : "§c§lDernière debout";
+                : endMode == EndMode.LAST_STANDING ? "§c§lDernière debout" : "§e§lPremier à finir";
         ItemStack endItem = createItemHidden(endMat, "§e§l🏁 Fin : " + endLabel,
                 List.of("§7Mode de fin de partie",
                         "",
                         (endMode == EndMode.ALL_TEAMS ? "§a▸ " : "§7  ") + "Toutes les équipes doivent finir",
                         (endMode == EndMode.LAST_STANDING ? "§c▸ " : "§7  ") + "Dernière équipe debout",
+                        (endMode == EndMode.FIRST_TO_FINISH ? "§e▸ " : "§7  ") + "Première équipe à finir",
                         "",
                         "§e► Clic pour changer"));
         inventory.setItem(23, endItem);
@@ -231,7 +234,7 @@ public class AdminConfigGUI implements InventoryHolder {
             }
             case 10 -> { // Taille grille
                 int current = game.getGrid().getSize();
-                int next = current == 3 ? 5 : current == 5 ? 7 : 3;
+                int next = current == 1 ? 3 : current == 3 ? 5 : current == 5 ? 7 : 1;
                 game.getGrid().setSize(next);
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
@@ -285,7 +288,9 @@ public class AdminConfigGUI implements InventoryHolder {
                     player.closeInventory();
                     game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
                     new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
-                    player.sendMessage("§a§lGrille générée ! §7(" + game.getGrid().getSize() + "x" + game.getGrid().getSize() +
+                    
+                    String sName = game.getGrid().getSize() == 1 ? "Roulette" : game.getGrid().getSize() + "x" + game.getGrid().getSize();
+                    player.sendMessage("§a§lGrille générée ! §7(" + sName +
                             ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
                     player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
                 }

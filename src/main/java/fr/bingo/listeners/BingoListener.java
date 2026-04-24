@@ -684,6 +684,10 @@ public class BingoListener implements Listener {
             } else if (notFinished == 0 && totalPlaying > 0) {
                 triggerGameEnd();
             }
+        } else if (endMode == EndMode.FIRST_TO_FINISH) {
+            if (notFinished < totalPlaying && totalPlaying > 0) {
+                triggerGameEnd();
+            }
         }
     }
 

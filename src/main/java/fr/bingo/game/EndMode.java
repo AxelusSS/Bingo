@@ -2,7 +2,8 @@ package fr.bingo.game;
 
 public enum EndMode {
     ALL_TEAMS("Toutes les équipes", "§a"),
-    LAST_STANDING("Dernière debout", "§c");
+    LAST_STANDING("Dernière debout", "§c"),
+    FIRST_TO_FINISH("Premier à finir", "§e");
 
     private final String displayName;
     private final String color;

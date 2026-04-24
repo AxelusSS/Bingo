@@ -129,8 +129,18 @@ public class BingoGame {
         }
 
         Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            this.state = GameState.PLAYING;
-            this.startTime = System.currentTimeMillis();
+            if (grid.getSize() == 1 && !grid.getObjectives().isEmpty()) {
+                // Mode Roulette
+                fr.bingo.gui.RouletteGUI.startRoulette(grid.getObjectives().get(0), this::finalizeStart);
+            } else {
+                finalizeStart();
+            }
+        }, 5 * 20L);
+    }
+    
+    private void finalizeStart() {
+        this.state = GameState.PLAYING;
+        this.startTime = System.currentTimeMillis();
             this.pvpEnabled = false;
 
             TeamManager tm = BingoPlugin.getInstance().getTeamManager();
@@ -219,7 +229,6 @@ public class BingoGame {
             } else {
                 Bukkit.broadcastMessage("§7§l⚔ PVP : §eActivation dans §b§l" + pvpTimerMinutes + " minutes");
             }
-        }, 5 * 20L);
     }
 
     private void schedulePvpTimer() {

@@ -20,6 +20,7 @@ fr\bingo\scenario\TimberScenario.class
 fr\bingo\scenario\SwitchScenario.class
 fr\bingo\game\BingoGame$1.class
 fr\bingo\game\ScoreboardManager$ScoreEntry.class
+fr\bingo\gui\RouletteGUI.class
 fr\bingo\scenario\TeamInventoryScenario.class
 fr\bingo\scenario\NoFoodScenario.class
 fr\bingo\scenario\SwitchInventoryScenario.class
@@ -29,6 +30,7 @@ fr\bingo\gui\TeamConfigGUI.class
 fr\bingo\game\BingoObjectivePool.class
 fr\bingo\scenario\CutCleanScenario$1.class
 fr\bingo\commands\FFCommand.class
+fr\bingo\gui\RouletteGUI$1.class
 fr\bingo\gui\TeamSelectorGUI.class
 fr\bingo\commands\GameInfoCommand.class
 fr\bingo\scenario\HasteyBoysScenario.class
