@@ -37,9 +37,11 @@ public class BingoGrid {
             pool.addAll(BingoObjectivePool.getAchievementPool());
         }
 
-        // Filtrer par difficulté max
+        // Filtrer par difficulté max et items désactivés
+        java.util.Set<String> disabled = fr.bingo.BingoPlugin.getInstance().getBingoGame().getDisabledPoolItems();
         pool = pool.stream()
                 .filter(e -> e.difficulty.ordinal() <= maxDifficulty.ordinal())
+                .filter(e -> !disabled.contains(e.id))
                 .collect(Collectors.toList());
 
         Collections.shuffle(pool);

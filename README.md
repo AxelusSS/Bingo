@@ -50,7 +50,10 @@ Interface complète via le **compas** dans la hotbar :
 - **Livre de recettes débloqué** automatiquement dès le lancement de la partie
 - Désactivation de la **Locator Bar** (barre de tracking 1.21) par défaut pour éviter l'anti-jeu
 
-### ✨ Dernières Nouveautés / Corrections
+### ✨ Dernières Nouveautés (V1.1)
+- **Scénarios façon Erisium :** 16 nouveaux scénarios (CatEyes, NoFood, SuperHero, Timber, CutClean, Switch, Grave, etc.) configurables via un grand GUI dynamique accessible par le compas admin !
+- **Configuration de la Pool Bingo :** Un clic droit sur l'item "Générer la grille" (Nether Star) permet d'ouvrir un menu interactif et paginé pour désactiver individuellement les items/achievements que vous ne souhaitez pas voir apparaître.
+- **Affichage des Potions :** Les potions à trouver s'affichent maintenant avec leur vraie couleur et leur effet dans l'inventaire Bingo (vision nocturne, force, etc.) pour une meilleure clarté visuelle.
 - **Fix Reconnexion :** Les joueurs qui se déconnectent en pleine partie conservent leur inventaire, vie, faim, XP et position à la reconnexion sans être téléportés au spawn.
 - **Fin de partie (500s) :** Un décompte discret dans l'ActionBar s'affiche à la fin, suivi d'un redémarrage automatique du serveur (nouveau monde généré).
 - **Amélioration du mode FFA :** Lors de la complétion d'une ligne/colonne, c'est le pseudo du joueur qui s'affiche en blanc, et non plus "L'équipe".

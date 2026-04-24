@@ -156,16 +156,20 @@ public class AdminConfigGUI implements InventoryHolder {
                         "§e► Clic pour changer"));
         inventory.setItem(23, endItem);
 
-        // Slot 25 : KeepInventory
-        boolean ki = game.isKeepInventory();
-        ItemStack kiItem = createItem(ki ? Material.CHEST : Material.SKELETON_SKULL,
-                ki ? "§a§l📦 KeepInventory : ON" : "§c§l📦 KeepInventory : OFF",
-                List.of("§7Garder l'inventaire à la mort",
+        // Slot 25 : Scénarios
+        int activeScenarios = 0;
+        for (fr.bingo.scenario.Scenario s : BingoPlugin.getInstance().getScenarioManager().getScenarios()) {
+            if (s.isEnabled()) activeScenarios++;
+        }
+        
+        ItemStack scenariosItem = createItemHidden(Material.COMMAND_BLOCK,
+                "§e§l📜 Scénarios",
+                List.of("§7Gérer les scénarios actifs",
                         "",
-                        ki ? "§a▸ Activé (toutes dimensions)" : "§c▸ Désactivé",
+                        "§b▸ " + activeScenarios + " scénario(s) activé(s)",
                         "",
-                        "§e► Clic pour basculer"));
-        inventory.setItem(25, kiItem);
+                        "§e► Clic pour ouvrir le sous-menu"));
+        inventory.setItem(25, scenariosItem);
 
         // Slot 40 : Réinitialisation du monde
         ItemStack resetItem = createItemHidden(Material.TNT, "§c§l💥 RÉINITIALISER LA MAP 💥",
@@ -187,7 +191,10 @@ public class AdminConfigGUI implements InventoryHolder {
                         "§7Taille : §b" + size + "x" + size,
                         "§7Difficulté : " + diff.getColor() + diff.getDisplayName(),
                         "§7Mode : " + mode.getColor() + mode.getDisplayName(),
-                        "§7Durée : §b" + durationStr));
+                        "§7Durée : §b" + durationStr,
+                        "",
+                        "§e► Clic gauche pour générer",
+                        "§d► Clic droit pour configurer la pool"));
         inventory.setItem(29, genItem);
 
         // Slot 31 : START
@@ -250,9 +257,8 @@ public class AdminConfigGUI implements InventoryHolder {
                 refresh(player);
             }
             case 25 -> {
-                game.setKeepInventory(!game.isKeepInventory());
-                player.playSound(player.getLocation(), Sound.BLOCK_LEVER_CLICK, 1f, 1.2f);
-                refresh(player);
+                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.openInventory(new ScenarioConfigGUI().getInventory());
             }
             case 40 -> {
                 game.prepareWorldReset(player);
@@ -260,12 +266,17 @@ public class AdminConfigGUI implements InventoryHolder {
             }
 
             case 29 -> { // Générer
-                player.closeInventory();
-                game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
-                new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
-                player.sendMessage("§a§lGrille générée ! §7(" + game.getGrid().getSize() + "x" + game.getGrid().getSize() +
-                        ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
-                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
+                if (isRightClick) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                    player.openInventory(new PoolConfigGUI(0).getInventory());
+                } else {
+                    player.closeInventory();
+                    game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
+                    new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
+                    player.sendMessage("§a§lGrille générée ! §7(" + game.getGrid().getSize() + "x" + game.getGrid().getSize() +
+                            ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
+                }
             }
             case 31 -> { // Start
                 player.closeInventory();

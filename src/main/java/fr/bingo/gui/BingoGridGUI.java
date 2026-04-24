@@ -86,6 +86,7 @@ public class BingoGridGUI implements InventoryHolder {
                 // --- Gestion spéciale des POTIONS ---
                 if (obj.getId().startsWith("POTION_")) {
                     applyPotionMeta(item, obj.getId());
+                    meta = item.getItemMeta(); // Update meta reference to keep PotionMeta
                     displayName = getPotionDisplayName(obj.getId());
                 }
 

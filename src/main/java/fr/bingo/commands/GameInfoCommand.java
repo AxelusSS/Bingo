@@ -50,8 +50,21 @@ public class GameInfoCommand implements CommandExecutor {
             }
         }
         
-        // Keep Inventory
-        sender.sendMessage("§fKeep Inventory : " + (game.isKeepInventory() ? "§aOUI" : "§cNON"));
+        // Scénarios
+        sender.sendMessage("");
+        sender.sendMessage("§f§nScénarios actifs :");
+        java.util.List<fr.bingo.scenario.Scenario> activeScenarios = new java.util.ArrayList<>();
+        for (fr.bingo.scenario.Scenario s : BingoPlugin.getInstance().getScenarioManager().getScenarios()) {
+            if (s.isEnabled()) activeScenarios.add(s);
+        }
+        
+        if (activeScenarios.isEmpty()) {
+            sender.sendMessage("§8  Aucun scénario actif.");
+        } else {
+            for (fr.bingo.scenario.Scenario s : activeScenarios) {
+                sender.sendMessage("§a  ▸ " + s.getName());
+            }
+        }
         
         sender.sendMessage("§8§m---------------------------------------");
         

@@ -308,6 +308,27 @@ public class BingoListener implements Listener {
             return;
         }
 
+        // GUI Scenario Config
+        if (event.getInventory().getHolder() instanceof fr.bingo.gui.ScenarioConfigGUI gui) {
+            event.setCancelled(true);
+            gui.handleClick(player, event.getRawSlot(), event.isRightClick());
+            return;
+        }
+
+        // GUI Super Hero Config
+        if (event.getInventory().getHolder() instanceof fr.bingo.gui.SuperHeroConfigGUI gui) {
+            event.setCancelled(true);
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
+        // GUI Pool Config
+        if (event.getInventory().getHolder() instanceof fr.bingo.gui.PoolConfigGUI gui) {
+            event.setCancelled(true);
+            gui.handleClick(player, event.getRawSlot());
+            return;
+        }
+
         // GUI PVP Config
         if (event.getInventory().getHolder() instanceof PvpConfigGUI gui) {
             event.setCancelled(true);

@@ -28,11 +28,9 @@ public class BingoGame {
     private BukkitTask pvpTask;
     private BukkitTask pvpWarningTask;
 
-    // ── End Mode ──
     private EndMode endMode = EndMode.ALL_TEAMS;
 
-    // ── KeepInventory ──
-    private boolean keepInventory = true;
+    private final java.util.Set<String> disabledPoolItems = new java.util.HashSet<>();
     private final java.util.Set<UUID> startingPlayers = new java.util.HashSet<>();
     private BukkitTask gameTimerTask;
 
@@ -72,9 +70,7 @@ public class BingoGame {
     public EndMode getEndMode() { return endMode; }
     public void setEndMode(EndMode endMode) { this.endMode = endMode; }
 
-    // KeepInventory
-    public boolean isKeepInventory() { return keepInventory; }
-    public void setKeepInventory(boolean ki) { this.keepInventory = ki; }
+    public java.util.Set<String> getDisabledPoolItems() { return disabledPoolItems; }
 
     public long getElapsedSeconds() {
         if (state == GameState.WAITING) return 0;
@@ -160,9 +156,8 @@ public class BingoGame {
             world.setThundering(false);
             world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
 
-            // KeepInventory appliqué à TOUTES les dimensions
+            // Météo fixée pour toutes les dimensions
             for (World w : Bukkit.getWorlds()) {
-                w.setGameRule(GameRule.KEEP_INVENTORY, keepInventory);
                 w.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
                 w.setStorm(false);
                 w.setThundering(false);
@@ -170,6 +165,9 @@ public class BingoGame {
 
             // Tâche 3 : Désactiver la Locator Bar (barre de tracking joueurs sur la barre d'XP)
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "gamerule locator_bar false");
+
+            // Lancement des scénarios
+            BingoPlugin.getInstance().getScenarioManager().onGameStart();
 
             // Révoquer tous les advancements bingo pour un tracking per-team propre
             revokeAllBingoAdvancements();

@@ -13,6 +13,7 @@ public class BingoPlugin extends JavaPlugin {
     private fr.bingo.team.TeamManager teamManager;
     private fr.bingo.game.BingoGame bingoGame;
     private fr.bingo.listeners.BingoListener bingoListener;
+    private fr.bingo.scenario.ScenarioManager scenarioManager;
 
     @Override
     public void onLoad() {
@@ -64,6 +65,7 @@ public class BingoPlugin extends JavaPlugin {
         // Initialisation Teams & Game
         this.teamManager = new fr.bingo.team.TeamManager();
         this.bingoGame = new fr.bingo.game.BingoGame();
+        this.scenarioManager = new fr.bingo.scenario.ScenarioManager();
 
         // Enregistrement des commandes
         fr.bingo.commands.TeamCommand teamCmd = new fr.bingo.commands.TeamCommand();
@@ -151,5 +153,9 @@ public class BingoPlugin extends JavaPlugin {
 
     public fr.bingo.listeners.BingoListener getBingoListener() {
         return bingoListener;
+    }
+
+    public fr.bingo.scenario.ScenarioManager getScenarioManager() {
+        return scenarioManager;
     }
 }
