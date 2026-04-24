@@ -24,7 +24,7 @@ public class AdminConfigGUI implements InventoryHolder {
     private final Inventory inventory;
 
     public AdminConfigGUI() {
-        this.inventory = Bukkit.createInventory(this, 45, "§6§l⚙ Configuration UHC");
+        this.inventory = Bukkit.createInventory(this, 45, "§6§l⚙ Configuration HEL");
         populate();
     }
 

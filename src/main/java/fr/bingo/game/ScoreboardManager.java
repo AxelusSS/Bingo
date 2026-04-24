@@ -4,14 +4,12 @@ import fr.bingo.BingoPlugin;
 import fr.bingo.team.BingoTeam;
 import fr.bingo.team.TeamManager;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ScoreboardManager {
 
@@ -19,7 +17,7 @@ public class ScoreboardManager {
     private int scorePage = 0;
     private long lastPageSwitch = 0;
     private static final int ENTRIES_PER_PAGE = 5;
-    private static final long PAGE_SWITCH_INTERVAL_MS = 10000; // 10 secondes
+    private static final long PAGE_SWITCH_INTERVAL_MS = 10000;
 
     public ScoreboardManager(BingoPlugin plugin) {
         this.plugin = plugin;
@@ -34,17 +32,19 @@ public class ScoreboardManager {
         BingoGame game = plugin.getBingoGame();
         TeamManager tm = plugin.getTeamManager();
 
+        boolean isBingoMode = plugin.getScenarioManager()
+                .isScenarioEnabled(fr.bingo.scenario.BingoScenario.class);
+
         long elapsed = game.getElapsedSeconds();
         long minutes = elapsed / 60;
         long secs = elapsed % 60;
         String timeStr = String.format("%02d:%02d", minutes, secs);
-        if (game.getState() == GameState.WAITING)
-            timeStr = "En attente";
+        if (game.getState() == GameState.WAITING) timeStr = "En attente";
 
-        // Construire le classement dynamique (tout le monde)
-        List<ScoreEntry> ranking = buildRanking(tm, game);
+        // Classement
+        List<ScoreEntry> ranking = buildRanking(tm, game, isBingoMode);
 
-        // Gérer le défilement des pages
+        // Pagination
         int totalPages = (int) Math.ceil((double) ranking.size() / ENTRIES_PER_PAGE);
         if (totalPages <= 1) {
             scorePage = 0;
@@ -56,57 +56,53 @@ public class ScoreboardManager {
             }
         }
 
-        String title = plugin.getConfig().getString("scoreboard.title", "§6§lBINGO");
+        // Titre : nom du preset chargé, sinon "HEL"
+        String title = game.getActivePresetName() != null
+                ? "§6§l" + game.getActivePresetName()
+                : "§6§lHEL";
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            updatePlayerScoreboard(player, title, timeStr, ranking, tm, game, totalPages);
+            updatePlayerScoreboard(player, title, timeStr, ranking, tm, game, totalPages, isBingoMode);
         }
     }
 
-    /**
-     * Construit le classement : en FFA → joueurs, en équipe → équipes actives
-     * non-vides.
-     * Top 5 max.
-     */
-    private List<ScoreEntry> buildRanking(TeamManager tm, BingoGame game) {
+    private List<ScoreEntry> buildRanking(TeamManager tm, BingoGame game, boolean isBingoMode) {
         List<ScoreEntry> entries = new ArrayList<>();
 
         if (tm.isSoloMode()) {
-            // Mode FFA : chaque joueur en ligne non spectateur est une entrée
             for (Player player : Bukkit.getOnlinePlayers()) {
                 BingoTeam team = tm.getPlayerTeam(player);
-                if (team != null && team.getName().equals("Spectateur"))
-                    continue;
+                if (team != null && team.getName().equals("Spectateur")) continue;
+
+                int score = isBingoMode
+                        ? (team != null ? team.getScore() : 0)
+                        : (team != null ? team.getKills() : 0);
 
                 entries.add(new ScoreEntry(
                         "§f" + player.getName(),
-                        team != null ? team.getScore() : 0,
+                        score,
                         team != null && team.isFinished(),
                         team != null ? team.getFinishedTime() : 0));
             }
         } else {
-            // Mode équipes : uniquement les équipes actives non-vides
             for (BingoTeam team : tm.getActiveTeams()) {
-                if (team.getPlayers().isEmpty())
-                    continue;
+                if (team.getPlayers().isEmpty()) continue;
+
+                int score = isBingoMode ? team.getScore() : team.getKills();
+
                 entries.add(new ScoreEntry(
                         team.getChatColor() + team.getName(),
-                        team.getScore(),
+                        score,
                         team.isFinished(),
                         team.getFinishedTime()));
             }
         }
 
-        // Trier : terminé en premier (par temps), puis par score décroissant
         entries.sort((a, b) -> {
-            if (a.finished && !b.finished)
-                return -1;
-            if (!a.finished && b.finished)
-                return 1;
-            if (a.finished && b.finished)
-                return Long.compare(a.finishedTime, b.finishedTime);
-            if (a.score != b.score)
-                return Integer.compare(b.score, a.score);
+            if (a.finished && !b.finished) return -1;
+            if (!a.finished && b.finished) return 1;
+            if (a.finished && b.finished) return Long.compare(a.finishedTime, b.finishedTime);
+            if (a.score != b.score) return Integer.compare(b.score, a.score);
             return 0;
         });
 
@@ -114,17 +110,15 @@ public class ScoreboardManager {
     }
 
     private void updatePlayerScoreboard(Player player, String title, String timeStr,
-            List<ScoreEntry> ranking, TeamManager tm, BingoGame game, int totalPages) {
+            List<ScoreEntry> ranking, TeamManager tm, BingoGame game, int totalPages, boolean isBingoMode) {
 
         org.bukkit.scoreboard.ScoreboardManager manager = Bukkit.getScoreboardManager();
-        if (manager == null)
-            return;
+        if (manager == null) return;
 
         Scoreboard board = manager.getNewScoreboard();
 
         // ── TAB : couleurs des noms ──
         if (!tm.isSoloMode()) {
-            // Mode équipe : appliquer les couleurs d'équipe dans le tab
             List<BingoTeam> allTeams = new ArrayList<>(tm.getTeams());
             allTeams.add(tm.getSpectatorTeam());
 
@@ -135,12 +129,10 @@ public class ScoreboardManager {
                 sbTeam.setPrefix(bt.getChatColor().toString());
                 for (UUID uuid : bt.getPlayers()) {
                     Player p = Bukkit.getPlayer(uuid);
-                    if (p != null)
-                        sbTeam.addEntry(p.getName());
+                    if (p != null) sbTeam.addEntry(p.getName());
                 }
             }
         } else {
-            // Mode FFA : tout le monde en blanc, pas de couleur
             org.bukkit.scoreboard.Team sbTeam = board.registerNewTeam("bg_ffa");
             sbTeam.setColor(org.bukkit.ChatColor.WHITE);
             sbTeam.setPrefix("§f");
@@ -154,102 +146,113 @@ public class ScoreboardManager {
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         List<String> lines = new ArrayList<>();
-
         lines.add("§8§m-----------------");
 
         // Chrono
         lines.add("§f⏱ Chrono: §b" + timeStr);
 
-        // Espace
+        // PVP Timer : afficher QUAND le pvp s'active (timestamp absolu)
+        if (game.getState() == GameState.PLAYING && !game.isPvpEnabled()) {
+            if (game.isPvpDisabled()) {
+                lines.add("§f⚔ PVP: §cDésactivé");
+            } else {
+                // Afficher le moment où le PVP s'active (pvpTimerMinutes après le start)
+                int pvpMinutes = game.getPvpTimerMinutes();
+                lines.add("§f⚔ PVP: §e" + pvpMinutes + ":00");
+            }
+        } else if (game.getState() == GameState.PLAYING && game.isPvpEnabled()) {
+            lines.add("§f⚔ PVP: §aActivé");
+        }
+
         lines.add(" ");
 
-        // Progression de l'équipe du joueur
-        BingoTeam playerTeam = tm.getPlayerTeam(player);
-        if (playerTeam != null && !playerTeam.getName().equals("Spectateur")) {
-            int found = playerTeam.getUnlockedObjectives().size();
-            int total = game.getGrid().getObjectives().size();
-            
-            if (game.getGrid().getSize() == 1) {
-                // Mode Roulette
-                if (playerTeam.isFinished()) {
-                    long elapsedSec = (playerTeam.getFinishedTime() - game.getStartTime()) / 1000;
-                    String ft = String.format("%02d:%02d", elapsedSec / 60, elapsedSec % 60);
-                    lines.add("§fTemps: §a" + ft);
+        if (isBingoMode) {
+            // ── Mode Bingo : Progression ──
+            BingoTeam playerTeam = tm.getPlayerTeam(player);
+            if (playerTeam != null && !playerTeam.getName().equals("Spectateur")) {
+                int found = playerTeam.getUnlockedObjectives().size();
+                int total = game.getGrid().getObjectives().size();
+
+                if (game.getGrid().getSize() == 1) {
+                    if (playerTeam.isFinished()) {
+                        long elapsedSec = (playerTeam.getFinishedTime() - game.getStartTime()) / 1000;
+                        String ft = String.format("%02d:%02d", elapsedSec / 60, elapsedSec % 60);
+                        lines.add("§fTemps: §a" + ft);
+                    } else {
+                        lines.add("§fObjectif: §cEn recherche...");
+                    }
                 } else {
-                    lines.add("§fObjectif: §cEn recherche...");
+                    if (total > 0) {
+                        lines.add("§fProgression: §a" + found + "§7/" + total);
+                    } else {
+                        lines.add("§fProgression: §7-");
+                    }
+                    lines.add("§fPoints: §e" + playerTeam.getScore());
                 }
-            } else {
-                if (total > 0) {
-                    lines.add("§fProgression: §a" + found + "§7/" + total);
-                } else {
-                    lines.add("§fProgression: §7-");
-                }
-                lines.add("§fPoints: §e" + playerTeam.getScore());
-            }
-        } else {
-            if (game.getGrid().getSize() == 1) {
-                lines.add("§fObjectif: §7-");
             } else {
                 lines.add("§fProgression: §7-");
-                lines.add("§fPoints: §7-");
+            }
+        } else {
+            // ── Mode UHC : Kills ──
+            BingoTeam playerTeam = tm.getPlayerTeam(player);
+            if (playerTeam != null && !playerTeam.getName().equals("Spectateur")) {
+                lines.add("§f☠ Kills: §c" + playerTeam.getKills());
+            } else {
+                lines.add("§f☠ Kills: §7-");
+            }
+
+            // Bordure
+            BorderManager bm = plugin.getBorderManager();
+            if (game.getState() == GameState.PLAYING) {
+                org.bukkit.WorldBorder wb = Bukkit.getWorlds().get(0).getWorldBorder();
+                int currentSize = (int) wb.getSize();
+                lines.add("§f📏 Bordure: §b" + currentSize);
             }
         }
 
-        // Espace
         lines.add("  ");
 
-        // Classement dynamique (Pagination)
+        // Classement
         int start = scorePage * ENTRIES_PER_PAGE;
         int end = Math.min(start + ENTRIES_PER_PAGE, ranking.size());
 
+        String scoreLabel = isBingoMode ? "pts" : "kills";
+
         if (ranking.isEmpty()) {
             lines.add("§7En attente...");
-            // Padding pour garder la taille constante (5 lignes de classement)
-            for (int i = 0; i < 4; i++) {
-                lines.add("§" + (i + 1));
-            }
-            lines.add("   "); // Place pour l'indicateur de page
+            for (int i = 0; i < 4; i++) lines.add("§" + (i + 1));
+            lines.add("   ");
         } else {
-            // Afficher les entrées de la page actuelle
             for (int i = start; i < end; i++) {
                 ScoreEntry entry = ranking.get(i);
                 String prefix = "§f" + (i + 1) + ". ";
                 String line;
                 if (entry.finished) {
-                    // Afficher le temps de complétion au lieu de ✔
                     long elapsedSec = (entry.finishedTime - game.getStartTime()) / 1000;
-                    int min = (int) (elapsedSec / 60);
-                    int sec = (int) (elapsedSec % 60);
-                    String finishTime = String.format("%02d:%02d", min, sec);
+                    String finishTime = String.format("%02d:%02d", (int)(elapsedSec / 60), (int)(elapsedSec % 60));
                     line = prefix + entry.name + " §7- §a" + finishTime;
                 } else {
-                    if (game.getGrid().getSize() == 1) {
-                        line = prefix + entry.name + " §7- §bEn cours";
-                    } else {
-                        line = prefix + entry.name + " §7- §b" + entry.score;
-                    }
+                    line = prefix + entry.name + " §7- §b" + entry.score + " " + scoreLabel;
                 }
                 lines.add(line);
             }
 
-            // Padding pour garder la taille constante (5 lignes de classement)
             int shown = end - start;
             for (int i = 0; i < (ENTRIES_PER_PAGE - shown); i++) {
-                lines.add("§" + (i + 5)); // Codes couleurs invisibles pour lignes uniques
+                lines.add("§" + (i + 5));
             }
 
-            // Indicateur de page (seulement si plusieurs pages)
             if (totalPages > 1) {
                 lines.add("§8Page " + (scorePage + 1) + "/" + totalPages);
             } else {
-                lines.add("    "); // Espace pour garder la taille
+                lines.add("    ");
             }
         }
 
         lines.add("§8§m-----------------");
         lines.add("§fPlugins by HEL");
 
-        // Écrire le scoreboard
+        // Écrire
         int scoreIndex = lines.size();
         Set<String> usedLines = new HashSet<>();
 
@@ -259,7 +262,6 @@ public class ScoreboardManager {
                 uniqueLine += "§r";
             }
             usedLines.add(uniqueLine);
-
             objective.getScore(uniqueLine).setScore(scoreIndex);
             scoreIndex--;
         }

@@ -289,6 +289,25 @@ public class BingoListener implements Listener {
         }, 0L, 30L);
     }
 
+    // ── Kill Tracking (UHC) ──
+
+    @EventHandler
+    public void onPlayerDeath(org.bukkit.event.entity.PlayerDeathEvent event) {
+        BingoGame game = BingoPlugin.getInstance().getBingoGame();
+        if (game.getState() != GameState.PLAYING) return;
+
+        Player victim = event.getEntity();
+        Player killer = victim.getKiller();
+
+        if (killer != null && killer != victim) {
+            fr.bingo.team.TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+            fr.bingo.team.BingoTeam killerTeam = tm.getPlayerTeam(killer);
+            if (killerTeam != null && !killerTeam.getName().equals("Spectateur")) {
+                killerTeam.addKill();
+            }
+        }
+    }
+
     // ── Clic inventaire ──
 
     @EventHandler

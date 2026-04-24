@@ -21,6 +21,7 @@ public class BingoTeam {
     private boolean isFinished;
     private long finishedTime;
     private final java.util.Set<UUID> forfeitVotes;
+    private int kills;
 
     public BingoTeam(String name, ChatColor chatColor, Material bannerMaterial) {
         this.name = name;
@@ -34,6 +35,7 @@ public class BingoTeam {
         this.lastScoreTime = 0;
         this.isFinished = false;
         this.forfeitVotes = new java.util.HashSet<>();
+        this.kills = 0;
     }
 
     public String getName() {
@@ -107,6 +109,7 @@ public class BingoTeam {
         this.lastScoreTime = 0;
         this.isFinished = false;
         this.forfeitVotes.clear();
+        this.kills = 0;
     }
     
     public List<String> getUnlockedObjectives() {
@@ -211,4 +214,8 @@ public class BingoTeam {
     public void clearForfeitVotes() {
         forfeitVotes.clear();
     }
+
+    public int getKills() { return kills; }
+    public void addKill() { this.kills++; }
+    public void setKills(int kills) { this.kills = kills; }
 }

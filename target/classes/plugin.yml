@@ -1,9 +1,9 @@
-name: Bingo
-version: 1.0-SNAPSHOT
+name: HEL
+version: 1.4.0
 main: fr.bingo.BingoPlugin
 api-version: 1.21
 authors: [Antigravity]
-description: Un plugin reproduisant le mode de jeu Bingo.
+description: Plugin UHC multijoueur avec scenarios modulaires (Bingo, UHC Run, etc.)
 load: STARTUP
 
 commands:
@@ -30,5 +30,5 @@ commands:
     description: Voir les reglages de la partie
     aliases: [info]
   finish:
-    description: Sauvegarde l'inventaire de départ en mode édition.
+    description: Sauvegarde l'inventaire de depart en mode edition.
     permission: bingo.admin

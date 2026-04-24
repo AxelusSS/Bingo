@@ -33,6 +33,7 @@ public class BingoGame {
     private final java.util.Set<String> disabledPoolItems = new java.util.HashSet<>();
     private final java.util.Set<UUID> startingPlayers = new java.util.HashSet<>();
     private BukkitTask gameTimerTask;
+    private String activePresetName;
 
     public BingoGame() {
         this.state = GameState.WAITING;
@@ -71,6 +72,9 @@ public class BingoGame {
     public void setEndMode(EndMode endMode) { this.endMode = endMode; }
 
     public java.util.Set<String> getDisabledPoolItems() { return disabledPoolItems; }
+
+    public String getActivePresetName() { return activePresetName; }
+    public void setActivePresetName(String name) { this.activePresetName = name; }
 
     public long getElapsedSeconds() {
         if (state == GameState.WAITING) return 0;
@@ -298,6 +302,9 @@ public class BingoGame {
 
     private void scheduleGameDurationTimer() {
         if (gameTimerTask != null) gameTimerTask.cancel();
+        
+        // 0 = durée illimitée (pas de timer)
+        if (gameDurationMinutes <= 0) return;
         
         gameTimerTask = Bukkit.getScheduler().runTaskTimer(BingoPlugin.getInstance(), () -> {
             if (state != GameState.PLAYING) return;
@@ -626,7 +633,7 @@ public class BingoGame {
     public static void giveAdminCompass(Player player) {
         org.bukkit.inventory.ItemStack compass = new org.bukkit.inventory.ItemStack(Material.COMPASS);
         org.bukkit.inventory.meta.ItemMeta meta = compass.getItemMeta();
-        meta.setDisplayName("§6§l⚙ Configuration Bingo");
+        meta.setDisplayName("§6§l⚙ Configuration HEL");
         meta.setLore(java.util.List.of("§7Clic droit pour configurer la partie"));
         org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(BingoPlugin.getInstance(), "admin_compass");
         meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);

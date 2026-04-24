@@ -148,7 +148,7 @@ public class PresetConfigGUI implements InventoryHolder {
             manager.addPendingSave(player.getUniqueId());
             
             player.sendMessage("§e§m----------------------------------");
-            player.sendMessage("§a[Bingo] §fVeuillez écrire le §anom de votre sauvegarde §fdans le chat.");
+            player.sendMessage("§a[HEL] §fVeuillez écrire le §anom de votre sauvegarde §fdans le chat.");
             player.sendMessage("§7(Pour annuler, tapez 'annuler' ou 'cancel')");
             player.sendMessage("§e§m----------------------------------");
                 
@@ -165,8 +165,9 @@ public class PresetConfigGUI implements InventoryHolder {
             Map<String, PresetData> community = manager.getCommunityPresets();
             if (community.containsKey(name)) {
                 manager.applyData(community.get(name));
+                BingoPlugin.getInstance().getBingoGame().setActivePresetName(name);
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
-                player.sendMessage("§a[Bingo] §fPreset '§e" + name + "§f' chargé !");
+                player.sendMessage("§a[HEL] §fPreset '§e" + name + "§f' chargé !");
                 player.openInventory(new AdminConfigGUI().getInventory()); // Retour au menu principal pour voir les modifs
             }
         } else if (slot >= 18 && slot <= 35) {
@@ -181,14 +182,16 @@ public class PresetConfigGUI implements InventoryHolder {
                         if (isRightClick) {
                             BingoPlugin.getInstance().getDatabaseManager().deletePreset(id, player.getUniqueId().toString());
                             player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_BREAK, 1f, 1f);
-                            player.sendMessage("§c[Bingo] §fSauvegarde supprimée !");
+                            player.sendMessage("§c[HEL] §fSauvegarde supprimée !");
                             populate(player); // Refresh
                         } else {
                             Map<Integer, PresetData> personalPresets = BingoPlugin.getInstance().getDatabaseManager().getPlayerPresets(player.getUniqueId().toString());
                             if (personalPresets.containsKey(id)) {
                                 manager.applyData(personalPresets.get(id));
+                                String saveName = org.bukkit.ChatColor.stripColor(item.getItemMeta().getDisplayName());
+                                BingoPlugin.getInstance().getBingoGame().setActivePresetName(saveName);
                                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
-                                player.sendMessage("§a[Bingo] §fSauvegarde chargée !");
+                                player.sendMessage("§a[HEL] §fSauvegarde chargée !");
                                 player.openInventory(new AdminConfigGUI().getInventory());
                             }
                         }
