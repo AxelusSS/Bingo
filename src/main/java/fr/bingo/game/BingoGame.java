@@ -128,14 +128,7 @@ public class BingoGame {
             }, (5 - count) * 20L);
         }
 
-        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            if (grid.getSize() == 1 && !grid.getObjectives().isEmpty()) {
-                // Mode Roulette
-                fr.bingo.gui.RouletteGUI.startRoulette(grid.getObjectives().get(0), this::finalizeStart);
-            } else {
-                finalizeStart();
-            }
-        }, 5 * 20L);
+        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), this::finalizeStart, 5 * 20L);
     }
     
     private void finalizeStart() {

@@ -194,29 +194,19 @@ public class AdminConfigGUI implements InventoryHolder {
 
         // ── Rangée 4 (slots 27-35) : Actions ──
 
-        // Slot 29 : GÉNÉRER (Caché en mode Roulette)
-        if (size == 1) {
-            ItemStack genItem = createItem(Material.BARRIER, "§c§l✦ GÉNÉRATION AUTOMATIQUE",
-                    List.of("§7En mode Roulette, l'objectif",
-                            "§7est généré automatiquement",
-                            "§7au lancement de la partie.",
-                            "",
-                            "§d► Clic droit pour configurer la pool"));
-            inventory.setItem(29, genItem);
-        } else {
-            ItemStack genItem = createItem(Material.NETHER_STAR, "§a§l✦ GÉNÉRER LA GRILLE",
-                    List.of("§7Génère une nouvelle grille",
-                            "§7avec les paramètres actuels",
-                            "",
-                            "§7Taille : §b" + size + "x" + size,
-                            "§7Difficulté : " + diff.getColor() + diff.getDisplayName(),
-                            "§7Mode : " + mode.getColor() + mode.getDisplayName(),
-                            "§7Durée : §b" + durationStr,
-                            "",
-                            "§e► Clic gauche pour générer",
-                            "§d► Clic droit pour configurer la pool"));
-            inventory.setItem(29, genItem);
-        }
+        // Slot 29 : GÉNÉRER
+        ItemStack genItem = createItem(Material.NETHER_STAR, "§a§l✦ GÉNÉRER LA GRILLE",
+                List.of("§7Génère une nouvelle grille",
+                        "§7avec les paramètres actuels",
+                        "",
+                        "§7Taille : §b" + sizeStr,
+                        "§7Difficulté : " + diff.getColor() + diff.getDisplayName(),
+                        "§7Mode : " + mode.getColor() + mode.getDisplayName(),
+                        "§7Durée : §b" + durationStr,
+                        "",
+                        "§e► Clic gauche pour générer",
+                        "§d► Clic droit pour configurer la pool"));
+        inventory.setItem(29, genItem);
 
         // Slot 31 : START
         ItemStack startItem = createItem(Material.LIME_CONCRETE, "§a§l▶ LANCER LA PARTIE",
@@ -294,25 +284,26 @@ public class AdminConfigGUI implements InventoryHolder {
                 if (isRightClick) {
                     player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                     player.openInventory(new PoolConfigGUI(0).getInventory());
-                } else if (game.getGrid().getSize() > 1) {
+                } else {
                     player.closeInventory();
                     game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
                     new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
                     
-                    String sName = game.getGrid().getSize() == 1 ? "Roulette" : game.getGrid().getSize() + "x" + game.getGrid().getSize();
-                    player.sendMessage("§a§lGrille générée ! §7(" + sName +
-                            ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
-                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
+                    if (game.getGrid().getSize() == 1) {
+                        // Roulette mode: lance la roulette pour révéler l'objectif
+                        fr.bingo.gui.RouletteGUI.startRoulette(game.getGrid().getObjectives().get(0), () -> {
+                            player.sendMessage("§a§lL'objectif a été tiré au sort !");
+                        });
+                    } else {
+                        String sName = game.getGrid().getSize() + "x" + game.getGrid().getSize();
+                        player.sendMessage("§a§lGrille générée ! §7(" + sName +
+                                ", " + game.getDifficulty().getDisplayName() + ", " + game.getMode().getDisplayName() + ")");
+                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
+                    }
                 }
             }
             case 31 -> { // Start
                 player.closeInventory();
-                
-                // Si Roulette, auto-générer la grille (1 objectif) si ce n'est pas fait
-                if (game.getGrid().getSize() == 1) {
-                    game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
-                    new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
-                }
                 
                 if (game.getGrid().getObjectives().isEmpty()) {
                     player.sendMessage("§c§lERREUR : §cGénère d'abord une grille !");
