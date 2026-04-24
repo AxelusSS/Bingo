@@ -1,3 +1,4 @@
+fr\bingo\gui\PresetConfigGUI.class
 fr\bingo\scenario\SuperHeroScenario.class
 fr\bingo\scenario\KeepInventoryScenario.class
 fr\bingo\scenario\SharedHealthScenario.class
@@ -39,7 +40,9 @@ fr\bingo\game\BingoObjective.class
 fr\bingo\commands\CompassCommand.class
 fr\bingo\scenario\CutCleanScenario.class
 fr\bingo\listeners\BingoListener$1.class
+fr\bingo\preset\PresetData.class
 fr\bingo\game\GameState.class
+fr\bingo\preset\PresetManager.class
 fr\bingo\scenario\ScenarioManager.class
 fr\bingo\game\BingoGame.class
 fr\bingo\database\DatabaseManager.class

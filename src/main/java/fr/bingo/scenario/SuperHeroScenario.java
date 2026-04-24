@@ -68,9 +68,11 @@ public class SuperHeroScenario extends Scenario {
         p.removePotionEffect(PotionEffectType.JUMP_BOOST);
         
         if (type == PotionEffectType.HEALTH_BOOST) {
-            p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, 4, false, false, false)); // +10 hearts
+            p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, 4, false, false, false)); // +10 hearts (20 HP additionnels = 2 barres)
+        } else if (type == PotionEffectType.SPEED || type == PotionEffectType.JUMP_BOOST) {
+            p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, 1, false, false, false)); // Level 2
         } else {
-            p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, 0, false, false, false));
+            p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, 0, false, false, false)); // Level 1 (Resistance, Strength)
         }
     }
 

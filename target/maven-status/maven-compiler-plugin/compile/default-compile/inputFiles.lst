@@ -19,12 +19,15 @@ C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\game\Sco
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\AdminConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\BingoGridGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\PoolConfigGUI.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\PresetConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\PvpConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\ScenarioConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\SuperHeroConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\TeamConfigGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\gui\TeamSelectorGUI.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\listeners\BingoListener.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\preset\PresetData.java
+C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\preset\PresetManager.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\scenario\CatEyesScenario.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\scenario\CutCleanScenario.java
 C:\Users\louis\.gemini\antigravity\scratch\bingo\src\main\java\fr\bingo\scenario\FastSmeltingScenario.java

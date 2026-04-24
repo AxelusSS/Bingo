@@ -43,6 +43,14 @@ public class AdminConfigGUI implements InventoryHolder {
             inventory.setItem(row * 9 + 8, border);
         }
 
+        // Slot 4 : Sauvegardes / Presets
+        ItemStack presetItem = createItemHidden(Material.BOOK, "§d§lSauvegardes & Presets",
+                List.of("§7Gérer les configurations",
+                        "§7du jeu.",
+                        "",
+                        "§e► Clic pour ouvrir"));
+        inventory.setItem(4, presetItem);
+
         // ── Rangée 2 (slots 9-17) : Paramètres de jeu ──
 
         // Slot 10 : Taille de la grille
@@ -217,6 +225,10 @@ public class AdminConfigGUI implements InventoryHolder {
         TeamManager tm = BingoPlugin.getInstance().getTeamManager();
 
         switch (slot) {
+            case 4 -> { // Presets
+                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.openInventory(new fr.bingo.gui.PresetConfigGUI(player).getInventory());
+            }
             case 10 -> { // Taille grille
                 int current = game.getGrid().getSize();
                 int next = current == 3 ? 5 : current == 5 ? 7 : 3;

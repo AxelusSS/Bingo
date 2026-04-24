@@ -53,6 +53,7 @@ Interface complète via le **compas** dans la hotbar :
 ### ✨ Dernières Nouveautés (V1.1)
 - **Scénarios façon Erisium :** 16 nouveaux scénarios (CatEyes, NoFood, SuperHero, Timber, CutClean, Switch, Grave, etc.) configurables via un grand GUI dynamique accessible par le compas admin !
 - **Configuration de la Pool Bingo :** Un clic droit sur l'item "Générer la grille" (Nether Star) permet d'ouvrir un menu interactif et paginé pour désactiver individuellement les items/achievements que vous ne souhaitez pas voir apparaître.
+- **Système de Presets & Sauvegardes :** Sauvegardez la configuration complète de votre partie en base de données ou utilisez les configs communautaires (ex: FFA 1H NoPVP) pour lancer des parties d'un simple clic !
 - **Affichage des Potions :** Les potions à trouver s'affichent maintenant avec leur vraie couleur et leur effet dans l'inventaire Bingo (vision nocturne, force, etc.) pour une meilleure clarté visuelle.
 - **Fix Reconnexion :** Les joueurs qui se déconnectent en pleine partie conservent leur inventaire, vie, faim, XP et position à la reconnexion sans être téléportés au spawn.
 - **Fin de partie (500s) :** Un décompte discret dans l'ActionBar s'affiche à la fin, suivi d'un redémarrage automatique du serveur (nouveau monde généré).

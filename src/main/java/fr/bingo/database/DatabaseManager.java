@@ -54,10 +54,15 @@ public class DatabaseManager {
                      "achievement_or_item VARCHAR(255) NOT NULL" +
                      ");";
                      
-        // Note: SQLite utilise AUTOINCREMENT, MySQL utilise AUTO_INCREMENT. 
-        // Pour une compatibilité parfaite, on utilisera une approche un peu distincte, mais c'est l'idée.
+        // Table Presets
+        String sqlPresets = "CREATE TABLE IF NOT EXISTS bingo_presets (" +
+                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                     "name VARCHAR(128) NOT NULL," +
+                     "owner_uuid VARCHAR(36) NOT NULL," +
+                     "data TEXT NOT NULL" +
+                     ");";
+                     
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            // Adaptation simplifiée: pour MySQL il faut AUTO_INCREMENT.
             String driver = connection.getMetaData().getDriverName().toLowerCase();
             if(driver.contains("mysql")) {
                 sql = "CREATE TABLE IF NOT EXISTS bingo_stats (" +
@@ -67,11 +72,25 @@ public class DatabaseManager {
                       "temps_realise INT NOT NULL," + 
                       "achievement_or_item VARCHAR(255) NOT NULL" +
                       ");";
+                
+                sqlPresets = "CREATE TABLE IF NOT EXISTS bingo_presets (" +
+                             "id INT AUTO_INCREMENT PRIMARY KEY," +
+                             "name VARCHAR(128) NOT NULL," +
+                             "owner_uuid VARCHAR(36) NOT NULL," +
+                             "data LONGTEXT NOT NULL" +
+                             ");";
+                             
                 try(PreparedStatement stmt2 = connection.prepareStatement(sql)) {
                     stmt2.execute();
                 }
+                try(PreparedStatement stmt3 = connection.prepareStatement(sqlPresets)) {
+                    stmt3.execute();
+                }
             } else {
                 stmt.execute();
+                try(PreparedStatement stmt3 = connection.prepareStatement(sqlPresets)) {
+                    stmt3.execute();
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -86,6 +105,76 @@ public class DatabaseManager {
             stmt.setString(1, pseudo);
             stmt.setInt(2, secondsTaken);
             stmt.setString(3, itemOrAchievement);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ── PRESETS ──
+
+    public java.util.Map<Integer, fr.bingo.preset.PresetData> getPlayerPresets(String uuid) {
+        java.util.Map<Integer, fr.bingo.preset.PresetData> map = new java.util.LinkedHashMap<>();
+        if (connection == null) return map;
+        
+        String sql = "SELECT id, name, data FROM bingo_presets WHERE owner_uuid = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, uuid);
+            try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                com.google.gson.Gson gson = new com.google.gson.Gson();
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    // String name = rs.getString("name");
+                    String dataJson = rs.getString("data");
+                    fr.bingo.preset.PresetData data = gson.fromJson(dataJson, fr.bingo.preset.PresetData.class);
+                    map.put(id, data);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    public java.util.Map<Integer, String> getPlayerPresetNames(String uuid) {
+        java.util.Map<Integer, String> map = new java.util.LinkedHashMap<>();
+        if (connection == null) return map;
+        
+        String sql = "SELECT id, name FROM bingo_presets WHERE owner_uuid = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, uuid);
+            try (java.sql.ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getInt("id"), rs.getString("name"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    public void savePreset(String name, String uuid, String jsonData) {
+        if (connection == null) return;
+        
+        String sql = "INSERT INTO bingo_presets (name, owner_uuid, data) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setString(2, uuid);
+            stmt.setString(3, jsonData);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deletePreset(int id, String uuid) {
+        if (connection == null) return;
+        
+        String sql = "DELETE FROM bingo_presets WHERE id = ? AND owner_uuid = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, uuid);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

@@ -329,6 +329,13 @@ public class BingoListener implements Listener {
             return;
         }
 
+        // GUI Preset Config
+        if (event.getInventory().getHolder() instanceof fr.bingo.gui.PresetConfigGUI gui) {
+            event.setCancelled(true);
+            gui.handleClick(player, event.getRawSlot(), event.isRightClick());
+            return;
+        }
+
         // GUI PVP Config
         if (event.getInventory().getHolder() instanceof PvpConfigGUI gui) {
             event.setCancelled(true);
@@ -818,6 +825,32 @@ public class BingoListener implements Listener {
     public void onPlayerChat(org.bukkit.event.player.AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         String message = event.getMessage();
+        
+        // --- Vérification Preset Save ---
+        fr.bingo.preset.PresetManager manager = new fr.bingo.preset.PresetManager();
+        fr.bingo.preset.PresetData pending = manager.getPendingSave(player.getUniqueId());
+        if (pending != null) {
+            event.setCancelled(true);
+            
+            if (message.equalsIgnoreCase("annuler") || message.equalsIgnoreCase("cancel")) {
+                manager.removePendingSave(player.getUniqueId());
+                player.sendMessage("§c[Bingo] §fCréation de la sauvegarde annulée.");
+                return;
+            }
+            
+            manager.removePendingSave(player.getUniqueId());
+            String json = manager.toJson(pending);
+            BingoPlugin.getInstance().getDatabaseManager().savePreset(message, player.getUniqueId().toString(), json);
+            
+            player.sendMessage("§a[Bingo] §fSauvegarde '§e" + message + "§f' créée avec succès !");
+            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f);
+            
+            Bukkit.getScheduler().runTask(BingoPlugin.getInstance(), () -> {
+                player.openInventory(new fr.bingo.gui.PresetConfigGUI(player).getInventory());
+            });
+            return;
+        }
+        // --------------------------------
 
         TeamManager teamManager = BingoPlugin.getInstance().getTeamManager();
         BingoTeam team = teamManager.getPlayerTeam(player);
