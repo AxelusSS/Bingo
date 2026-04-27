@@ -94,6 +94,14 @@ public class BingoPlugin extends JavaPlugin {
         // Démarrage du Scoreboard
         new fr.bingo.game.ScoreboardManager(this);
 
+        // Auto-stop de sécurité (Inactivité au démarrage)
+        getServer().getScheduler().runTaskLater(this, () -> {
+            if (getServer().getOnlinePlayers().isEmpty()) {
+                getLogger().warning("[HEL] Aucun joueur detecté après 3 minutes. Fermeture automatique.");
+                getServer().shutdown();
+            }
+        }, 3600L); // 3 minutes (20 ticks * 60 sec * 3)
+
         // Générer le script de lancement automatique
         generateStartScripts();
     }
