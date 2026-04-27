@@ -176,6 +176,14 @@ public class AdminConfigGUI implements InventoryHolder {
                         "",
                         "§e► Clic pour lancer la procédure"));
         inventory.setItem(40, resetItem);
+
+        // Slot 38 : Configuration du monde (Génération)
+        ItemStack worldItem = createItemHidden(Material.GRASS_BLOCK, "§a§l🌍 Génération de Map",
+                List.of("§7Configurer la génération du monde",
+                        "§7(Biomes, Seed, Presets)",
+                        "",
+                        "§e► Clic pour ouvrir"));
+        inventory.setItem(38, worldItem);
     }
 
     /**
@@ -231,6 +239,10 @@ public class AdminConfigGUI implements InventoryHolder {
                 player.closeInventory();
                 game.resetGame();
                 player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1f);
+            }
+            case 38 -> { // World Config
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                player.openInventory(new WorldConfigGUI().getInventory());
             }
             case 40 -> { // World reset
                 game.prepareWorldReset(player);

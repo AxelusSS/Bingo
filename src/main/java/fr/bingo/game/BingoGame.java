@@ -35,6 +35,14 @@ public class BingoGame {
     private BukkitTask gameTimerTask;
     private String activePresetName;
 
+    private boolean eternalDay = true;
+    private boolean borderEnabled = true;
+
+    // ── World Config ──
+    private BiomeSize biomeSize = BiomeSize.MEDIUM;
+    private long worldSeed = -1; // -1 = random
+    private final java.util.Set<String> disabledBiomes = new java.util.HashSet<>();
+
     public BingoGame() {
         this.state = GameState.WAITING;
         this.grid = new BingoGrid();
@@ -75,6 +83,12 @@ public class BingoGame {
 
     public String getActivePresetName() { return activePresetName; }
     public void setActivePresetName(String name) { this.activePresetName = name; }
+
+    public boolean isEternalDay() { return eternalDay; }
+    public void setEternalDay(boolean eternalDay) { this.eternalDay = eternalDay; }
+
+    public boolean isBorderEnabled() { return borderEnabled; }
+    public void setBorderEnabled(boolean borderEnabled) { this.borderEnabled = borderEnabled; }
 
     public long getElapsedSeconds() {
         if (state == GameState.WAITING) return 0;
@@ -156,7 +170,13 @@ public class BingoGame {
         }
 
         World world = Bukkit.getWorlds().get(0);
-        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+        if (eternalDay) {
+            world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+            world.setTime(6000);
+        } else {
+            world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
+            world.setTime(2000); // 8h du matin
+        }
         world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
         world.setStorm(false);
         world.setThundering(false);
@@ -184,29 +204,33 @@ public class BingoGame {
         }
 
         StarterInventoryManager starterInv = BingoPlugin.getInstance().getStarterInventoryManager();
-
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
-            p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
-            p.setGameMode(GameMode.SURVIVAL);
-            p.getInventory().clear();
-
-            // Donner l'inventaire de départ personnalisé
-            starterInv.giveToPlayer(p);
-
-            p.setInvulnerable(true);
-
-            // Débloquer tous les crafts du livre de recettes
-            fr.bingo.listeners.BingoListener.discoverAllRecipes(p);
+        
+        // ── Départ UHC (Plateformes) vs Bingo (Centre) ──
+        if (!isBingoMode) {
+            setupUhcPlatforms(tm, starterInv);
+        } else {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
+                p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
+                p.setGameMode(GameMode.SURVIVAL);
+                p.getInventory().clear();
+                starterInv.giveToPlayer(p);
+                p.setInvulnerable(true);
+                fr.bingo.listeners.BingoListener.discoverAllRecipes(p);
+            }
+            destroyWaitingPlatform();
+            
+            Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.setInvulnerable(false);
+                }
+            }, 1200L); // 1 minute d'invincibilité
         }
 
-        destroyWaitingPlatform();
-
-        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), () -> {
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.setInvulnerable(false);
-            }
-        }, 200L);
+        // Scanner d'inventaire (seulement si Bingo actif)
+        if (isBingoMode) {
+            startInventoryScanner();
+        }
 
         // Scanner d'inventaire (seulement si Bingo actif)
         if (isBingoMode) {
@@ -220,7 +244,13 @@ public class BingoGame {
         scheduleGameDurationTimer();
 
         // ── Bordure ──
-        BingoPlugin.getInstance().getBorderManager().startBorder();
+        if (borderEnabled) {
+            BingoPlugin.getInstance().getBorderManager().startBorder();
+        } else {
+            // S'assurer que la bordure est grande si désactivée
+            World bw = Bukkit.getWorlds().get(0);
+            bw.getWorldBorder().setSize(10000);
+        }
 
         Bukkit.broadcastMessage("§6§l►► LA PARTIE DÉMARRE ! ◄◄ §r§eQue le meilleur gagne !");
 
@@ -313,7 +343,7 @@ public class BingoGame {
             if (elapsedMin >= gameDurationMinutes) {
                 forceGameEnd("Temps écoulé !");
             }
-        }, 20 * 60L, 20 * 60L); // Vérifier toutes les minutes
+        }, 20 * 20L, 20 * 20L); // Vérifier toutes les 20 secondes au lieu de toutes les minutes
     }
 
     public void forceGameEnd(String reason) {
@@ -522,6 +552,96 @@ public class BingoGame {
         }
     }
 
+    /**
+     * Logique de départ UHC : Plateformes aux extrémités de la bordure.
+     */
+    private void setupUhcPlatforms(TeamManager tm, StarterInventoryManager starterInv) {
+        List<fr.bingo.team.BingoTeam> activeTeams = tm.getActiveTeams();
+        if (activeTeams.isEmpty()) return;
+
+        World world = Bukkit.getWorlds().get(0);
+        int borderSize = BingoPlugin.getInstance().getBorderManager().getInitialSize();
+        double radius = (borderSize / 2.0) - 20; // Un peu de marge par rapport à la bordure
+        int platformY = 200;
+
+        List<Location> platformLocs = new java.util.ArrayList<>();
+        int numTeams = activeTeams.size();
+
+        for (int i = 0; i < numTeams; i++) {
+            double angle = (2 * Math.PI / numTeams) * i;
+            double x = Math.cos(angle) * radius;
+            double z = Math.sin(angle) * radius;
+            
+            // Créer la plateforme 3x3 en verre
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    world.getBlockAt((int)x, platformY, (int)z).getRelative(dx, 0, dz).setType(Material.GLASS);
+                }
+            }
+            platformLocs.add(new Location(world, x + 0.5, platformY + 1, z + 0.5));
+        }
+
+        // Mélanger les plateformes pour l'aléatoire
+        java.util.Collections.shuffle(platformLocs);
+
+        // TP des équipes
+        for (int i = 0; i < activeTeams.size(); i++) {
+            fr.bingo.team.BingoTeam team = activeTeams.get(i);
+            Location loc = platformLocs.get(i);
+            
+            // Pregen chunk
+            loc.getChunk().load(true);
+            
+            for (java.util.UUID uuid : team.getPlayers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) {
+                    p.teleport(loc);
+                    p.setGameMode(GameMode.SURVIVAL);
+                    p.getInventory().clear();
+                    starterInv.giveToPlayer(p);
+                    p.setInvulnerable(true);
+                    fr.bingo.listeners.BingoListener.discoverAllRecipes(p);
+                    p.sendTitle("§e60 secondes", "§7Préparation & Invinciilité", 0, 25, 5);
+                }
+            }
+        }
+
+        destroyWaitingPlatform();
+
+        // 1 minute de compte à rebours avant suppression plateformes + invincibilité
+        new org.bukkit.scheduler.BukkitRunnable() {
+            int count = 60;
+            @Override
+            public void run() {
+                if (count <= 0) {
+                    for (Location loc : platformLocs) {
+                        for (int dx = -1; dx <= 1; dx++) {
+                            for (int dz = -1; dz <= 1; dz++) {
+                                loc.getBlock().getRelative(dx, -1, dz).setType(Material.AIR);
+                            }
+                        }
+                    }
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.setInvulnerable(false);
+                        p.sendTitle("§a§lGO !", "§eBonne chance !", 0, 30, 10);
+                        p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7f, 1.5f);
+                    }
+                    this.cancel();
+                    return;
+                }
+                
+                if (count <= 5 || count == 30 || count == 15) {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        String color = count <= 5 ? "§c" : "§e";
+                        p.sendTitle(color + count, "§7Lancement...", 0, 21, 0);
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
+                    }
+                }
+                count--;
+            }
+        }.runTaskTimer(BingoPlugin.getInstance(), 20L, 20L);
+    }
+
     private void destroyWaitingPlatform() {
         World world = waitingPlatformLocation.getWorld();
         int y = 250;
@@ -642,74 +762,39 @@ public class BingoGame {
     }
 
     /**
-     * Prépare la réinitialisation complète du monde (Seed + Suppression dossiers).
-     * Nécessite le script run_bingo.bat pour la partie suppression physique.
+     * Prépare la fermeture définitive du serveur après la fin de partie.
      * @param admin le joueur admin qui a déclenché l'action, ou null si automatique.
      */
     public void prepareWorldReset(Player admin) {
-        // 1. Générer une nouvelle Seed
-        long newSeed = new java.util.Random().nextLong();
+        // Dans le setup Docker/Coolify, on ne reset pas le monde localement, 
+        // on éteint juste le serveur et Docker supprimera le container.
 
-        // 2. Modifier server.properties
-        try {
-            java.io.File propFile = new java.io.File("server.properties");
-            if (propFile.exists()) {
-                java.util.Properties props = new java.util.Properties();
-                try (java.io.FileInputStream in = new java.io.FileInputStream(propFile)) {
-                    props.load(in);
-                }
-                props.setProperty("level-seed", String.valueOf(newSeed));
-                try (java.io.FileOutputStream out = new java.io.FileOutputStream(propFile)) {
-                    props.store(out, "Modified by Bingo Plugin for World Reset");
-                }
-            }
-        } catch (java.io.IOException e) {
-            String errMsg = "§c[Erreur] Impossible de modifier server.properties : " + e.getMessage();
-            if (admin != null) {
-                admin.sendMessage(errMsg);
-            } else {
-                Bukkit.getLogger().warning(errMsg);
-            }
-            return;
-        }
-
-        // 3. Créer le flag reset_map.txt
-        try {
-            new java.io.File("reset_map.txt").createNewFile();
-        } catch (java.io.IOException e) {
-            String errMsg = "§c[Erreur] Impossible de créer le flag reset_map.txt.";
-            if (admin != null) {
-                admin.sendMessage(errMsg);
-            } else {
-                Bukkit.getLogger().warning(errMsg);
-            }
-            return;
-        }
-
-        // 4. Countdown et Shutdown
         new org.bukkit.scheduler.BukkitRunnable() {
-            int count = 10;
+            int count = 300; // 5 minutes
 
             @Override
             public void run() {
                 if (count <= 0) {
-                    Bukkit.broadcastMessage("§c§lREDÉMARRAGE DU SERVEUR !");
+                    Bukkit.broadcastMessage("§c§lFERMETURE DU SERVEUR !");
                     for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.kickPlayer("§c§lRéinitialisation du monde...\n\n§7Le serveur revient dans quelques instants sur une nouvelle map !");
+                        p.kickPlayer("§c§lPartie terminée !\n\n§7Le serveur va maintenant fermer. Merci d'avoir joué !");
                     }
                     Bukkit.shutdown();
                     this.cancel();
                     return;
                 }
 
-                if (count <= 5 || count == 10) {
+                // Annonces régulières
+                if (count == 300 || count == 120 || count == 60 || count == 30 || count <= 5) {
                     Bukkit.broadcastMessage("");
-                    Bukkit.broadcastMessage("§c§l  ⚠ RÉINITIALISATION DU MONDE DANS §e" + count + " §c§lSECONDES ! ⚠");
-                    Bukkit.broadcastMessage("§7  (Dossiers world, world_nether et world_the_end seront supprimés)");
+                    Bukkit.broadcastMessage("§c§l  ⚠ FERMETURE DU SERVEUR DANS §e" + (count >= 60 ? (count/60) + "m" : count + "s") + " ! ⚠");
+                    Bukkit.broadcastMessage("§7  L'instance va être supprimée pour libérer des ressources.");
                     Bukkit.broadcastMessage("");
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-                        p.sendTitle("§c§l⚠ RESET WORLD", "§eDans " + count + " secondes...", 0, 25, 5);
+                        if (count <= 10) {
+                            p.sendTitle("§c§l⚠ FERMETURE", "§eDans " + count + " secondes...", 0, 25, 5);
+                        }
                     }
                 }
                 count--;
@@ -763,4 +848,18 @@ public class BingoGame {
         }
         return id.replace("_", " ").toLowerCase();
     }
+
+    public enum BiomeSize {
+        SMALL(2), MEDIUM(4), LARGE(6);
+        private final int value;
+        BiomeSize(int value) { this.value = value; }
+        public int getValue() { return value; }
+    }
+
+    // Getters / Setters World Config
+    public BiomeSize getBiomeSize() { return biomeSize; }
+    public void setBiomeSize(BiomeSize biomeSize) { this.biomeSize = biomeSize; }
+    public long getWorldSeed() { return worldSeed; }
+    public void setWorldSeed(long seed) { this.worldSeed = seed; }
+    public java.util.Set<String> getDisabledBiomes() { return disabledBiomes; }
 }

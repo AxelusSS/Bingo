@@ -306,6 +306,15 @@ public class BingoListener implements Listener {
                 killerTeam.addKill();
             }
         }
+        
+        // Mode UHC : check si une seule équipe reste en vie
+        boolean isBingo = BingoPlugin.getInstance().getScenarioManager().isScenarioEnabled(fr.bingo.scenario.BingoScenario.class);
+        if (!isBingo) {
+            victim.setGameMode(GameMode.SPECTATOR);
+            victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1f, 1f);
+        }
+
+        Bukkit.getScheduler().runTaskLater(BingoPlugin.getInstance(), this::checkUhcEndCondition, 1L);
     }
 
     // ── Clic inventaire ──
@@ -384,6 +393,13 @@ public class BingoListener implements Listener {
 
         // GUI Team Config
         if (event.getInventory().getHolder() instanceof TeamConfigGUI gui) {
+            event.setCancelled(true);
+            gui.handleClick(player, event.getRawSlot(), event.isRightClick());
+            return;
+        }
+
+        // GUI World Config
+        if (event.getInventory().getHolder() instanceof fr.bingo.gui.WorldConfigGUI gui) {
             event.setCancelled(true);
             gui.handleClick(player, event.getRawSlot(), event.isRightClick());
             return;
@@ -740,6 +756,11 @@ public class BingoListener implements Listener {
             displayRanking();
 
             BingoPlugin.getInstance().getBingoGame().setState(GameState.FINISHED);
+            
+            // Mettre tout le monde en spectateur
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.setGameMode(GameMode.SPECTATOR);
+            }
 
             // Tâche 2 : Décompte de 300 secondes dans l'ActionBar avant changement de map
             startEndCountdown();
@@ -961,6 +982,49 @@ public class BingoListener implements Listener {
         }
         if (!keys.isEmpty()) {
             player.discoverRecipes(keys);
+        }
+    }
+
+    /**
+     * Vérifie si une seule équipe (ou joueur) reste en vie en mode UHC.
+     */
+    private void checkUhcEndCondition() {
+        BingoGame game = BingoPlugin.getInstance().getBingoGame();
+        if (game.getState() != GameState.PLAYING) return;
+        
+        // Si le Bingo est actif, la condition de fin est différente (items)
+        if (BingoPlugin.getInstance().getScenarioManager().isScenarioEnabled(fr.bingo.scenario.BingoScenario.class)) {
+            return;
+        }
+
+        TeamManager tm = BingoPlugin.getInstance().getTeamManager();
+        List<BingoTeam> aliveTeams = new java.util.ArrayList<>();
+
+        for (BingoTeam team : tm.getActiveTeams()) {
+            boolean hasAlivePlayer = false;
+            for (java.util.UUID uuid : team.getPlayers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null && p.getGameMode() == GameMode.SURVIVAL) {
+                    hasAlivePlayer = true;
+                    break;
+                }
+            }
+            if (hasAlivePlayer) {
+                aliveTeams.add(team);
+            }
+        }
+
+        if (aliveTeams.size() <= 1 && tm.getActiveTeams().size() > 1) {
+            if (aliveTeams.size() == 1) {
+                BingoTeam winner = aliveTeams.get(0);
+                String label = tm.isSoloMode() ? getTeamPlayerName(winner) : "L'équipe " + winner.getName();
+                Bukkit.broadcastMessage("");
+                Bukkit.broadcastMessage("§6§l🏆 VICTOIRE 🏆");
+                Bukkit.broadcastMessage("  " + winner.getChatColor() + label + " §7est la dernière en vie !");
+                Bukkit.broadcastMessage("");
+                winner.setFinished(true);
+            }
+            game.forceGameEnd("Dernière équipe en vie");
         }
     }
 }

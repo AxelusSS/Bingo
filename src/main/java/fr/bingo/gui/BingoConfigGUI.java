@@ -86,6 +86,24 @@ public class BingoConfigGUI implements InventoryHolder {
                         "§e► Clic gauche pour générer",
                         "§d► Clic droit pour configurer la pool")));
 
+        // Slot 19 : Jour Éternel
+        boolean eternal = game.isEternalDay();
+        inventory.setItem(19, createItem(eternal ? Material.SUNFLOWER : Material.CLOCK,
+                "§e§lJour Éternel : " + (eternal ? "§aACTIVÉ" : "§cDÉSACTIVÉ"),
+                List.of("§7Si activé, le soleil reste à midi.",
+                        "§7Sinon, la journée commence à 8h.",
+                        "",
+                        "§e► Clic pour basculer")));
+
+        // Slot 21 : Bordure
+        boolean border = game.isBorderEnabled();
+        inventory.setItem(21, createItem(Material.BARRIER,
+                "§c§lBordure : " + (border ? "§aACTIVÉE" : "§cDÉSACTIVÉE"),
+                List.of("§7Si désactivée, la bordure sera",
+                        "§7fixée à 10000 blocs.",
+                        "",
+                        "§e► Clic pour basculer")));
+
         // Slot 22 : Retour
         inventory.setItem(22, createItem(Material.ARROW, "§c§l← Retour", List.of("§7Retour aux scénarios")));
     }
@@ -120,11 +138,11 @@ public class BingoConfigGUI implements InventoryHolder {
                 } else {
                     player.closeInventory();
                     game.getGrid().generateRandomGrid(game.getMode(), game.getDifficulty());
-                    new DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
+                    new fr.bingo.game.DatapackManager().generateAdvancementsDatapack(game.getGrid(), game.getMode());
 
                     if (game.getGrid().getSize() == 1) {
                         // Roulette mode
-                        RouletteGUI.startRoulette(game.getGrid().getObjectives().get(0), () -> {
+                        fr.bingo.gui.RouletteGUI.startRoulette(game.getGrid().getObjectives().get(0), () -> {
                             player.sendMessage("§a§lL'objectif a été tiré au sort !");
                         });
                     } else {
@@ -134,6 +152,16 @@ public class BingoConfigGUI implements InventoryHolder {
                         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.2f);
                     }
                 }
+            }
+            case 19 -> { // Jour Éternel
+                game.setEternalDay(!game.isEternalDay());
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                refresh(player);
+            }
+            case 21 -> { // Bordure
+                game.setBorderEnabled(!game.isBorderEnabled());
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                refresh(player);
             }
             case 22 -> { // Retour
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);

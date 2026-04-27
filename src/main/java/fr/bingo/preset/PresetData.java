@@ -28,6 +28,11 @@ public class PresetData {
     public List<String> disabledPoolItems = new ArrayList<>();
     public List<String> activeScenarios = new ArrayList<>();
     
+    // World Config
+    public String biomeSize = "MEDIUM";
+    public long worldSeed = -1;
+    public List<String> disabledBiomes = new ArrayList<>();
+    
     // Icone
     public String icon = "ENCHANTED_BOOK";
     

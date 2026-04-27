@@ -80,6 +80,10 @@ public class PresetManager {
             }
         }
         
+        data.biomeSize = game.getBiomeSize().name();
+        data.worldSeed = game.getWorldSeed();
+        data.disabledBiomes.addAll(game.getDisabledBiomes());
+        
         return data;
     }
 
@@ -110,6 +114,11 @@ public class PresetManager {
         for (Scenario s : BingoPlugin.getInstance().getScenarioManager().getScenarios()) {
             s.setEnabled(data.activeScenarios.contains(s.getName()));
         }
+        
+        game.setBiomeSize(BingoGame.BiomeSize.valueOf(data.biomeSize));
+        game.setWorldSeed(data.worldSeed);
+        game.getDisabledBiomes().clear();
+        game.getDisabledBiomes().addAll(data.disabledBiomes);
     }
 
     public String toJson(PresetData data) {

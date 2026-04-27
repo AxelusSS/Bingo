@@ -54,12 +54,20 @@ public class FFCommand implements CommandExecutor {
     }
 
     private void handleSoloFF(Player player, BingoTeam team) {
-        team.setFinished(true);
-        player.setGameMode(GameMode.SPECTATOR);
-        player.getInventory().clear();
+        boolean isBingo = BingoPlugin.getInstance().getScenarioManager().isScenarioEnabled(fr.bingo.scenario.BingoScenario.class);
+        String prefix = isBingo ? "§8[§6Bingo§8] " : "§8[§cHEL§8] ";
         
-        Bukkit.broadcastMessage("§8[§6Bingo§8] §f" + player.getName() + " §ca abandonné la partie.");
-        player.sendMessage("§cVous avez abandonné. Vous êtes désormais spectateur.");
+        team.setFinished(true);
+        
+        if (isBingo) {
+            player.setGameMode(GameMode.SPECTATOR);
+            player.getInventory().clear();
+        } else {
+            player.setHealth(0); // Tue le joueur pour drop son inventaire en UHC
+        }
+        
+        Bukkit.broadcastMessage(prefix + "§f" + player.getName() + " §ca abandonné la partie.");
+        player.sendMessage("§cVous avez abandonné.");
         
         // Vérification de fin de partie
         BingoPlugin.getInstance().getBingoListener().checkEndCondition();
@@ -69,15 +77,22 @@ public class FFCommand implements CommandExecutor {
         team.toggleForfeitVote(player.getUniqueId());
         
         if (team.isAllForfeited()) {
+            boolean isBingo = BingoPlugin.getInstance().getScenarioManager().isScenarioEnabled(fr.bingo.scenario.BingoScenario.class);
+            String prefix = isBingo ? "§8[§6Bingo§8] " : "§8[§cHEL§8] ";
+            
             team.setFinished(true);
             for (java.util.UUID uuid : team.getPlayers()) {
                 Player p = Bukkit.getPlayer(uuid);
                 if (p != null) {
-                    p.setGameMode(GameMode.SPECTATOR);
-                    p.getInventory().clear();
+                    if (isBingo) {
+                        p.setGameMode(GameMode.SPECTATOR);
+                        p.getInventory().clear();
+                    } else if (p.getGameMode() == GameMode.SURVIVAL) {
+                        p.setHealth(0); // Tue les survivants
+                    }
                 }
             }
-            Bukkit.broadcastMessage("§8[§6Bingo§8] " + team.getChatColor() + "L'équipe " + team.getName() + " §ca abandonné la partie.");
+            Bukkit.broadcastMessage(prefix + team.getChatColor() + "L'équipe " + team.getName() + " §ca abandonné la partie.");
             
             // Vérification de fin de partie
             BingoPlugin.getInstance().getBingoListener().checkEndCondition();

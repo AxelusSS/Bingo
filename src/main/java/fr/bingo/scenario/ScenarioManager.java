@@ -31,6 +31,9 @@ public class ScenarioManager {
         scenarios.add(new TripleOresScenario());
         scenarios.add(new BoostLootScenario());
         scenarios.add(new MiniNetherScenario());
+        scenarios.add(new PvP18Scenario());
+        scenarios.add(new ClassicHandScenario());
+        scenarios.add(new ClassicPhysicsScenario());
         
         // Initialiser les events pour les scénarios activés par défaut
         for (Scenario s : scenarios) {

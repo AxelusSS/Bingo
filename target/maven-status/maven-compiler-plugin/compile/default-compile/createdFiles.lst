@@ -5,10 +5,13 @@ fr\bingo\scenario\KeepInventoryScenario.class
 fr\bingo\scenario\SharedHealthScenario.class
 fr\bingo\game\BingoGame$2.class
 fr\bingo\game\BingoMode.class
+fr\bingo\scenario\PvP18Scenario.class
 fr\bingo\gui\BingoGridGUI.class
+fr\bingo\gui\WorldConfigGUI.class
 fr\bingo\scenario\GraveScenario.class
 fr\bingo\scenario\Scenario.class
 fr\bingo\gui\PvpConfigGUI.class
+fr\bingo\scenario\ClassicHandScenario.class
 fr\bingo\gui\AdminConfigGUI.class
 fr\bingo\scenario\MiniNetherScenario.class
 fr\bingo\game\BingoObjectivePool$PoolEntry.class
@@ -19,6 +22,7 @@ fr\bingo\commands\TeamCommand.class
 fr\bingo\scenario\FirelessScenario.class
 fr\bingo\scenario\NoFallDamageScenario.class
 fr\bingo\commands\FinishCommand.class
+fr\bingo\game\BingoGame$BiomeSize.class
 fr\bingo\listeners\BingoListener$PlayerState.class
 fr\bingo\scenario\TimberScenario.class
 fr\bingo\scenario\SwitchScenario.class
@@ -32,6 +36,7 @@ fr\bingo\BingoPlugin.class
 fr\bingo\game\ScoreboardManager.class
 fr\bingo\scenario\BingoScenario.class
 fr\bingo\gui\TeamConfigGUI.class
+fr\bingo\scenario\ClassicPhysicsScenario.class
 fr\bingo\game\BingoObjectivePool.class
 fr\bingo\game\StarterInventoryManager.class
 fr\bingo\scenario\CutCleanScenario$1.class
@@ -71,4 +76,5 @@ fr\bingo\scenario\BoostLootScenario.class
 fr\bingo\scenario\FriendlyCraftScenario.class
 fr\bingo\gui\BingoConfigGUI.class
 fr\bingo\commands\BingoCommand.class
+fr\bingo\game\BingoGame$3.class
 fr\bingo\gui\SuperHeroConfigGUI.class
