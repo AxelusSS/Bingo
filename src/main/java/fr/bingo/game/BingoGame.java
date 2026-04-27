@@ -762,39 +762,74 @@ public class BingoGame {
     }
 
     /**
-     * Prépare la fermeture définitive du serveur après la fin de partie.
+     * Prépare la réinitialisation complète du monde (Seed + Suppression dossiers).
+     * Nécessite le script run_bingo.bat pour la partie suppression physique.
      * @param admin le joueur admin qui a déclenché l'action, ou null si automatique.
      */
     public void prepareWorldReset(Player admin) {
-        // Dans le setup Docker/Coolify, on ne reset pas le monde localement, 
-        // on éteint juste le serveur et Docker supprimera le container.
+        // 1. Générer une nouvelle Seed
+        long newSeed = new java.util.Random().nextLong();
 
+        // 2. Modifier server.properties
+        try {
+            java.io.File propFile = new java.io.File("server.properties");
+            if (propFile.exists()) {
+                java.util.Properties props = new java.util.Properties();
+                try (java.io.FileInputStream in = new java.io.FileInputStream(propFile)) {
+                    props.load(in);
+                }
+                props.setProperty("level-seed", String.valueOf(newSeed));
+                try (java.io.FileOutputStream out = new java.io.FileOutputStream(propFile)) {
+                    props.store(out, "Modified by Bingo Plugin for World Reset");
+                }
+            }
+        } catch (java.io.IOException e) {
+            String errMsg = "§c[Erreur] Impossible de modifier server.properties : " + e.getMessage();
+            if (admin != null) {
+                admin.sendMessage(errMsg);
+            } else {
+                Bukkit.getLogger().warning(errMsg);
+            }
+            return;
+        }
+
+        // 3. Créer le flag reset_map.txt
+        try {
+            new java.io.File("reset_map.txt").createNewFile();
+        } catch (java.io.IOException e) {
+            String errMsg = "§c[Erreur] Impossible de créer le flag reset_map.txt.";
+            if (admin != null) {
+                admin.sendMessage(errMsg);
+            } else {
+                Bukkit.getLogger().warning(errMsg);
+            }
+            return;
+        }
+
+        // 4. Countdown et Shutdown
         new org.bukkit.scheduler.BukkitRunnable() {
-            int count = 300; // 5 minutes
+            int count = 10;
 
             @Override
             public void run() {
                 if (count <= 0) {
-                    Bukkit.broadcastMessage("§c§lFERMETURE DU SERVEUR !");
+                    Bukkit.broadcastMessage("§c§lREDÉMARRAGE DU SERVEUR !");
                     for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.kickPlayer("§c§lPartie terminée !\n\n§7Le serveur va maintenant fermer. Merci d'avoir joué !");
+                        p.kickPlayer("§c§lRéinitialisation du monde...\n\n§7Le serveur revient dans quelques instants sur une nouvelle map !");
                     }
                     Bukkit.shutdown();
                     this.cancel();
                     return;
                 }
 
-                // Annonces régulières
-                if (count == 300 || count == 120 || count == 60 || count == 30 || count <= 5) {
+                if (count <= 5 || count == 10) {
                     Bukkit.broadcastMessage("");
-                    Bukkit.broadcastMessage("§c§l  ⚠ FERMETURE DU SERVEUR DANS §e" + (count >= 60 ? (count/60) + "m" : count + "s") + " ! ⚠");
-                    Bukkit.broadcastMessage("§7  L'instance va être supprimée pour libérer des ressources.");
+                    Bukkit.broadcastMessage("§c§l  ⚠ RÉINITIALISATION DU MONDE DANS §e" + count + " §c§lSECONDES ! ⚠");
+                    Bukkit.broadcastMessage("§7  (Dossiers world, world_nether et world_the_end seront supprimés)");
                     Bukkit.broadcastMessage("");
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f);
-                        if (count <= 10) {
-                            p.sendTitle("§c§l⚠ FERMETURE", "§eDans " + count + " secondes...", 0, 25, 5);
-                        }
+                        p.sendTitle("§c§l⚠ RESET WORLD", "§eDans " + count + " secondes...", 0, 25, 5);
                     }
                 }
                 count--;
