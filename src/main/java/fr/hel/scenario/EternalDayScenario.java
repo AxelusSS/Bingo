@@ -1,0 +1,21 @@
+package fr.hel.scenario;
+
+import fr.hel.HelPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
+import org.bukkit.Material;
+import org.bukkit.World;
+
+public class EternalDayScenario extends Scenario {
+
+    public EternalDayScenario() {
+        super("Eternal Day", Material.SUNFLOWER, "7Le soleil reste bloqu  midi.", true);
+    }
+
+    @Override
+    public void onGameStart() {
+        World world = Bukkit.getWorlds().get(0);
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        world.setTime(6000);
+    }
+}

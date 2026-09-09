@@ -1,17 +1,18 @@
 name: HEL
-version: 1.4.0
-main: fr.bingo.BingoPlugin
+version: 1.5.0
+main: fr.hel.HelPlugin
 api-version: 1.21
 authors: [Antigravity]
-description: Plugin UHC multijoueur avec scenarios modulaires (Bingo, UHC Run, etc.)
+description: Plugin UHC multijoueur avec scenarios modulaires (Hel, UHC Run, etc.)
 load: STARTUP
+softdepend: [WorldEdit]
 
 commands:
   bingo:
-    description: Commande principale du Bingo
+    description: Commande principale du Hel
     aliases: [b]
   bg:
-    description: Ouvrir la grille de Bingo
+    description: Ouvrir la grille de Hel
   bs:
     description: Alias pour bingo size
   tj:
@@ -31,4 +32,10 @@ commands:
     aliases: [info]
   finish:
     description: Sauvegarde l'inventaire de depart en mode edition.
+    permission: bingo.admin
+  setrank:
+    description: Definir le grade d'un joueur
+    permission: bingo.admin
+  nick:
+    description: Changer de pseudo
     permission: bingo.admin
