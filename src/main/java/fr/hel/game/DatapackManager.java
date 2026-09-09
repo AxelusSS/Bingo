@@ -150,7 +150,7 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": \"Hel Classique\",\n" +
                 "    \"description\": \"Utilisez /bg pour voir votre progression\",\n" +
-                "    \"background\": \"minecraft:block/light_blue_concrete_powder\",\n" +
+                "    \"background\": \"minecraft:textures/block/light_blue_concrete_powder.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false,\n" +

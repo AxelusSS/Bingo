@@ -9,7 +9,7 @@ import org.bukkit.World;
 public class EternalDayScenario extends Scenario {
 
     public EternalDayScenario() {
-        super("Eternal Day", Material.SUNFLOWER, "7Le soleil reste bloqu  midi.", true);
+        super("Eternal Day", Material.SUNFLOWER, "Le soleil reste bloqu\u00E9 \u00E0 midi.", true);
     }
 
     @Override

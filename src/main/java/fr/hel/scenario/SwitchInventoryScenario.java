@@ -17,7 +17,7 @@ public class SwitchInventoryScenario extends Scenario {
     private final Random random = new Random();
 
     public SwitchInventoryScenario() {
-        super("Switch Inventory", Material.BUNDLE, "Echange d'inventaire al\u00E9atoire entre 2 joueurs toutes les 10 min", false);
+        super("Switch Inventory", Material.BUNDLE, "\\u00C9change d'inventaire al\u00E9atoire entre 2 joueurs toutes les 10 min", false);
     }
 
     @Override

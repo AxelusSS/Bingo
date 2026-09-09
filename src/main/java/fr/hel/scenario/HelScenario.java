@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 public class HelScenario extends Scenario {
 
     public HelScenario() {
-        super("Hel", Material.MAP, "Active le mode Hel avec grille d'objectifs", false);
+        super("Bingo", Material.MAP, "Active le mode Bingo avec grille d'objectifs", false);
     }
 
     @Override

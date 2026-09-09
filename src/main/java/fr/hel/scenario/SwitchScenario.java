@@ -19,7 +19,7 @@ public class SwitchScenario extends Scenario {
     private final Random random = new Random();
 
     public SwitchScenario() {
-        super("Switch", Material.ENDER_PEARL, "Echange de place et d'\u00E9quipe al\u00E9atoire toutes les 10 min", false);
+        super("Switch", Material.ENDER_PEARL, "\\u00C9change de place et d'\u00E9quipe al\u00E9atoire toutes les 10 min", false);
     }
 
     @Override
