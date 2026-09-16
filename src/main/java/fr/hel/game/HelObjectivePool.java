@@ -347,6 +347,15 @@ public class HelObjectivePool {
         // --- EXTRA ---
         pool.add(new PoolEntry(Material.GRASS_BLOCK, Difficulty.HARD)); // Silk touch needed!
 
+        
+        // --- 26.x ITEMS ---
+        pool.add(new PoolEntry(Material.SULFUR, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.WOODEN_SPEAR, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.STONE_SPEAR, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.COPPER_SPEAR, Difficulty.HARD));
+        pool.add(new PoolEntry(Material.IRON_SPEAR, Difficulty.HARD));
+        pool.add(new PoolEntry(Material.SULFUR_BRICKS, Difficulty.MEDIUM));
+
         return pool;
     }
 
@@ -502,6 +511,15 @@ public class HelObjectivePool {
         
         // --- EXTRA ---
         pool.add(new PoolEntry(Material.GRASS_BLOCK, Difficulty.HARD)); // Silk touch needed!
+
+        
+        // --- 26.x ITEMS ---
+        pool.add(new PoolEntry(Material.SULFUR, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.WOODEN_SPEAR, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.STONE_SPEAR, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.COPPER_SPEAR, Difficulty.HARD));
+        pool.add(new PoolEntry(Material.IRON_SPEAR, Difficulty.HARD));
+        pool.add(new PoolEntry(Material.SULFUR_BRICKS, Difficulty.MEDIUM));
 
         return pool;
     }
