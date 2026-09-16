@@ -1,6 +1,6 @@
 services:
   bingo-server:
-    image: 'itzg/minecraft-server:java21'
+    image: 'itzg/minecraft-server:java25'
     container_name: bingo-server
     cpu_shares: 2048
     ports:
