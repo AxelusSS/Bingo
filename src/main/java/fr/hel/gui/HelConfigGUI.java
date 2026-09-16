@@ -123,8 +123,13 @@ public class HelConfigGUI implements InventoryHolder {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }
-            case 14 -> { // Mode
-                game.setMode(game.getMode().next());
+            case 13 -> { // Mode Items
+                game.setMode(fr.hel.game.HelMode.ITEMS);
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+                refresh(player);
+            }
+            case 15 -> { // Mode Achievements
+                game.setMode(fr.hel.game.HelMode.ACHIEVEMENTS);
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
                 refresh(player);
             }

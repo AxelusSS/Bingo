@@ -38,6 +38,16 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class HelListener implements Listener {
+    @EventHandler
+    public void onEntityDamage(org.bukkit.event.entity.EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        HelGame game = HelPlugin.getInstance().getHelGame();
+        // Désactiver TOUS les dégâts si la partie n'a pas commencé
+        if (game.getState() == fr.hel.game.GameState.WAITING) {
+            event.setCancelled(true);
+        }
+    }
+
 
     // \u2500\u2500 Sauvegarde d'\u00E9tat joueur pour la reconnexion (T\u00E2che 1) \u2500\u2500
     private static class PlayerState {

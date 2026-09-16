@@ -131,11 +131,30 @@ public class HelGame {
             for (int z = -16; z <= 16; z++) {
                 world.getBlockAt(x, y, z).setType(Material.GLASS);
                 if (x == -16 || x == 16 || z == -16 || z == 16) {
-                    for (int wallY = 1; wallY <= 3; wallY++) {
+                    // Monter les murs très haut pour empêcher de sortir du jump
+                    for (int wallY = 1; wallY <= 30; wallY++) {
                         world.getBlockAt(x, y + wallY, z).setType(Material.BARRIER);
                     }
                 }
             }
+        }
+        
+        // Générer un petit jump aléatoire pour patienter
+        java.util.Random r = new java.util.Random(world.getSeed());
+        int jumpY = y + 1;
+        int prevX = 0;
+        int prevZ = 0;
+        for(int i = 0; i < 20; i++) {
+            int jX = r.nextInt(24) - 12;
+            int jZ = r.nextInt(24) - 12;
+            // Assurer que ce n'est pas trop loin du bloc précédent
+            jX = Math.max(-14, Math.min(14, prevX + (r.nextInt(7) - 3)));
+            jZ = Math.max(-14, Math.min(14, prevZ + (r.nextInt(7) - 3)));
+            
+            jumpY += r.nextInt(2) + 1; // Monte de 1 ou 2 blocs max
+            world.getBlockAt(jX, jumpY, jZ).setType(Material.CYAN_STAINED_GLASS);
+            prevX = jX;
+            prevZ = jZ;
         }
 
         // Jour \u00E9ternel \u00E0 midi + pas de pluie pendant le hub
@@ -669,9 +688,9 @@ public class HelGame {
         int y = 250;
         for (int x = -16; x <= 16; x++) {
             for (int z = -16; z <= 16; z++) {
-                world.getBlockAt(x, y, z).setType(Material.AIR);
-                for (int wallY = 1; wallY <= 3; wallY++)
-                    world.getBlockAt(x, y + wallY, z).setType(Material.AIR);
+                for (int h = 0; h <= 30; h++) {
+                    world.getBlockAt(x, y + h, z).setType(Material.AIR);
+                }
             }
         }
     }

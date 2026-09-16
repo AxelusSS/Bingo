@@ -133,8 +133,8 @@ public class HelObjectivePool {
         pool.add(new PoolEntry(Material.POINTED_DRIPSTONE, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.GLOW_INK_SAC, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.POWDER_SNOW_BUCKET, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.NAME_TAG, Difficulty.EXTREME));
-        pool.add(new PoolEntry(Material.SADDLE, Difficulty.EXTREME));
+        pool.add(new PoolEntry(Material.NAME_TAG, Difficulty.EASY));
+        pool.add(new PoolEntry(Material.SADDLE, Difficulty.EASY));
 
         // Nether basique
         pool.add(new PoolEntry(Material.NETHER_BRICK, Difficulty.MEDIUM));
@@ -288,7 +288,6 @@ public class HelObjectivePool {
         pool.add(new PoolEntry(Material.BLACK_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
 
         // --- CONCRETE ---
-        pool.add(new PoolEntry(Material.WHITE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
         pool.add(new PoolEntry(Material.ORANGE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
         pool.add(new PoolEntry(Material.MAGENTA_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
         pool.add(new PoolEntry(Material.LIGHT_BLUE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
@@ -303,7 +302,6 @@ public class HelObjectivePool {
         pool.add(new PoolEntry(Material.BROWN_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
         pool.add(new PoolEntry(Material.GREEN_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
         pool.add(new PoolEntry(Material.RED_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.BLACK_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
 
         // --- FROGLIGHT ---
         pool.add(new PoolEntry(Material.OCHRE_FROGLIGHT, Difficulty.HARD, ItemCategory.FROGLIGHT));
@@ -417,109 +415,29 @@ public class HelObjectivePool {
 
         
         // --- TERRACOTTA ---
-        pool.add(new PoolEntry(Material.WHITE_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.ORANGE_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.MAGENTA_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.LIGHT_BLUE_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.YELLOW_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.LIME_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.PINK_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.GRAY_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.LIGHT_GRAY_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.CYAN_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.PURPLE_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.BLUE_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.BROWN_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.GREEN_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.RED_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
-        pool.add(new PoolEntry(Material.BLACK_TERRACOTTA, Difficulty.EASY, ItemCategory.TERRACOTTA));
 
         // --- GLAZED TERRACOTTA ---
-        pool.add(new PoolEntry(Material.WHITE_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.ORANGE_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.MAGENTA_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.LIGHT_BLUE_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.YELLOW_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.LIME_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.PINK_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.GRAY_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.LIGHT_GRAY_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.CYAN_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.PURPLE_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.BLUE_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.BROWN_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.GREEN_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.RED_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
-        pool.add(new PoolEntry(Material.BLACK_GLAZED_TERRACOTTA, Difficulty.MEDIUM, ItemCategory.GLAZED_TERRACOTTA));
 
         // --- CONCRETE ---
-        pool.add(new PoolEntry(Material.WHITE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.ORANGE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.MAGENTA_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.LIGHT_BLUE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.YELLOW_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.LIME_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.PINK_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.GRAY_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.LIGHT_GRAY_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.CYAN_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.PURPLE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.BLUE_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.BROWN_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.GREEN_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.RED_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
-        pool.add(new PoolEntry(Material.BLACK_CONCRETE, Difficulty.EASY, ItemCategory.CONCRETE));
 
         // --- FROGLIGHT ---
-        pool.add(new PoolEntry(Material.OCHRE_FROGLIGHT, Difficulty.HARD, ItemCategory.FROGLIGHT));
-        pool.add(new PoolEntry(Material.VERDANT_FROGLIGHT, Difficulty.HARD, ItemCategory.FROGLIGHT));
-        pool.add(new PoolEntry(Material.PEARLESCENT_FROGLIGHT, Difficulty.HARD, ItemCategory.FROGLIGHT));
 
         // --- COPPER ---
-        pool.add(new PoolEntry(Material.OXIDIZED_COPPER, Difficulty.MEDIUM, ItemCategory.COPPER));
-        pool.add(new PoolEntry(Material.EXPOSED_COPPER, Difficulty.MEDIUM, ItemCategory.COPPER));
-        pool.add(new PoolEntry(Material.WEATHERED_COPPER, Difficulty.MEDIUM, ItemCategory.COPPER));
-        pool.add(new PoolEntry(Material.CUT_COPPER, Difficulty.MEDIUM, ItemCategory.COPPER));
-        pool.add(new PoolEntry(Material.OXIDIZED_CUT_COPPER, Difficulty.MEDIUM, ItemCategory.COPPER));
 
         // --- QUARTZ ---
-        pool.add(new PoolEntry(Material.QUARTZ_PILLAR, Difficulty.HARD, ItemCategory.QUARTZ));
-        pool.add(new PoolEntry(Material.CHISELED_QUARTZ_BLOCK, Difficulty.HARD, ItemCategory.QUARTZ));
-        pool.add(new PoolEntry(Material.QUARTZ_BRICKS, Difficulty.HARD, ItemCategory.QUARTZ));
 
         // --- SANDSTONE ---
-        pool.add(new PoolEntry(Material.CUT_SANDSTONE, Difficulty.EASY, ItemCategory.SANDSTONE));
-        pool.add(new PoolEntry(Material.CHISELED_SANDSTONE, Difficulty.EASY, ItemCategory.SANDSTONE));
-        pool.add(new PoolEntry(Material.SMOOTH_SANDSTONE, Difficulty.EASY, ItemCategory.SANDSTONE));
         
         // --- RED SANDSTONE ---
-        pool.add(new PoolEntry(Material.CUT_RED_SANDSTONE, Difficulty.MEDIUM, ItemCategory.RED_SANDSTONE));
-        pool.add(new PoolEntry(Material.CHISELED_RED_SANDSTONE, Difficulty.MEDIUM, ItemCategory.RED_SANDSTONE));
-        pool.add(new PoolEntry(Material.SMOOTH_RED_SANDSTONE, Difficulty.MEDIUM, ItemCategory.RED_SANDSTONE));
 
         // --- GRANITE / DIORITE / ANDESITE ---
-        pool.add(new PoolEntry(Material.POLISHED_GRANITE, Difficulty.EASY, ItemCategory.GRANITE));
-        pool.add(new PoolEntry(Material.POLISHED_DIORITE, Difficulty.EASY, ItemCategory.DIORITE));
-        pool.add(new PoolEntry(Material.POLISHED_ANDESITE, Difficulty.EASY, ItemCategory.ANDESITE));
         
         // --- DEEPSLATE ---
-        pool.add(new PoolEntry(Material.COBBLED_DEEPSLATE, Difficulty.EASY, ItemCategory.DEEPSLATE));
-        pool.add(new PoolEntry(Material.POLISHED_DEEPSLATE, Difficulty.EASY, ItemCategory.DEEPSLATE));
-        pool.add(new PoolEntry(Material.DEEPSLATE_BRICKS, Difficulty.MEDIUM, ItemCategory.DEEPSLATE));
-        pool.add(new PoolEntry(Material.DEEPSLATE_TILES, Difficulty.MEDIUM, ItemCategory.DEEPSLATE));
-        pool.add(new PoolEntry(Material.CHISELED_DEEPSLATE, Difficulty.MEDIUM, ItemCategory.DEEPSLATE));
         
         // --- EXTRA ---
-        pool.add(new PoolEntry(Material.GRASS_BLOCK, Difficulty.HARD)); // Silk touch needed!
 
         
         // --- 26.x ITEMS ---
-        pool.add(new PoolEntry(Material.SULFUR, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.WOODEN_SPEAR, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.STONE_SPEAR, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.COPPER_SPEAR, Difficulty.HARD));
-        pool.add(new PoolEntry(Material.IRON_SPEAR, Difficulty.HARD));
-        pool.add(new PoolEntry(Material.SULFUR_BRICKS, Difficulty.MEDIUM));
 
         return pool;
     }
