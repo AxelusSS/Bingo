@@ -145,6 +145,7 @@ public class HelPlugin extends JavaPlugin {
             getCommand("team").setExecutor(teamCmd);
             getCommand("tj").setExecutor(teamCmd);
             getCommand("bingo").setExecutor(bingoCmd);
+        getCommand("parkour").setExecutor(new fr.hel.commands.JumpCommand());
             getCommand("bs").setExecutor(bingoCmd);
             getCommand("bg").setExecutor(bingoCmd);
             getCommand("pregen").setExecutor(new fr.hel.commands.PregenCommand());

@@ -18,7 +18,13 @@ public class JumpCommand implements CommandExecutor {
             return true;
         }
 
-        HelPlugin.getInstance().getHelGame().getJumpManager().startJump(p);
+        p.sendMessage("§aLancement du parkour...");
+        try {
+            HelPlugin.getInstance().getHelGame().getJumpManager().startJump(p);
+        } catch (Exception e) {
+            p.sendMessage("§cErreur: " + e.getMessage());
+            e.printStackTrace();
+        }
         return true;
     }
 }
