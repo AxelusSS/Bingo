@@ -46,8 +46,10 @@ public class HelListener implements Listener {
             
             // Failsafe pour ne pas tomber de la map d'attente
             if (p.getLocation().getY() < 248) {
-                game.teleportToWaitingArea(p);
-                game.getJumpManager().cleanupPlayer(p);
+                if (p.getGameMode() != org.bukkit.GameMode.CREATIVE && p.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+                    game.teleportToWaitingArea(p);
+                    game.getJumpManager().cleanupPlayer(p);
+                }
             }
             
             // Logique de génération de saut infinie

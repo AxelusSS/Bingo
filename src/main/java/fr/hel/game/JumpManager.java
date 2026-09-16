@@ -72,8 +72,18 @@ public class JumpManager {
                 int ny = lastLoc.getBlockY() + dy;
 
                 if (nx >= -14 && nx <= 14 && nz >= -14 && nz <= 14 && ny >= 253 && ny <= 310) {
-                    valid = true;
-                    lastLoc = new Location(lastLoc.getWorld(), nx, ny, nz);
+                    // Check if it overlaps with any existing active block
+                    boolean overlaps = false;
+                    for (Block active : data.activeBlocks) {
+                        if (active.getX() == nx && active.getZ() == nz) {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    if (!overlaps) {
+                        valid = true;
+                        lastLoc = new Location(lastLoc.getWorld(), nx, ny, nz);
+                    }
                 }
             }
         }
