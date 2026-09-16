@@ -16,11 +16,19 @@ public class TimberScenario extends Scenario {
         super("Timber", Material.IRON_AXE, "Les arbres se cassent en un coup de hache", false);
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
     public void onBlockBreak(BlockBreakEvent event) {
-        if (event.isCancelled()) return;
-        
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
+        
+        if (event.isCancelled()) {
+            // Contournement pour la hache en bois (Wand WorldEdit) qui annule l'event pour les OPs
+            if (item != null && item.getType() == Material.WOODEN_AXE) {
+                // On force l'exécution de Timber même si WorldEdit a annulé !
+            } else {
+                return;
+            }
+        }
+        
         if (item == null || !item.getType().name().endsWith("_AXE")) return;
         
         Block block = event.getBlock();

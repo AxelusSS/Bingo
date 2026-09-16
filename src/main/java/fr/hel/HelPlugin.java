@@ -162,10 +162,12 @@ public class HelPlugin extends JavaPlugin {
                 @org.bukkit.event.EventHandler
                 public void onWorldInit(org.bukkit.event.world.WorldInitEvent event) {
                     if (event.getWorld().getEnvironment() == org.bukkit.World.Environment.NORMAL) {
-                        event.getWorld().getPopulators().add(new fr.hel.game.UhcOrePopulator());
-                        getLogger().info("[HEL] UhcOrePopulator ajout\u00E9 au monde '" + event.getWorld().getName() + "'");
+                        if (bingoGame.getGenerationType() != fr.hel.game.HelGame.GenerationType.V_1_21_11) {
+                            event.getWorld().getPopulators().add(new fr.hel.game.UhcOrePopulator());
+                            getLogger().info("[HEL] UhcOrePopulator ajouté au monde '" + event.getWorld().getName() + "'");
+                        }
                         
-                        // Initialiser la plateforme d'attente une fois que le monde principal est pr\u00EAt
+                        // Initialiser la plateforme d'attente une fois que le monde principal est prêt
                         if (event.getWorld().getName().equals("world")) {
                             Bukkit.getScheduler().runTask(instance, () -> {
                                 bingoGame.setupWaitingPlatform();

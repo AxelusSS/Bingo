@@ -14,9 +14,18 @@ public class CatEyesScenario extends Scenario {
 
     @Override
     public void onGameStart() {
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            // Dur\u00E9e infinie, amplificateur 0, particules cach\u00E9es
-            p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, Integer.MAX_VALUE, 0, false, false, false));
-        }
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!isEnabled()) {
+                    this.cancel();
+                    return;
+                }
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    // Durée de 10 secondes (200 ticks), amplificateur 0
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 200, 0, false, false, false));
+                }
+            }
+        }.runTaskTimer(fr.hel.HelPlugin.getInstance(), 0L, 100L); // Toutes les 5 secondes
     }
 }

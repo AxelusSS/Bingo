@@ -454,25 +454,7 @@ public class HelGame {
                                         grantHelAdvancement(tp, i);
                                         tp.playSound(tp.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.4f, 1.2f);
                                         
-                                        // Feu d'artifice
-                                        org.bukkit.entity.Firework fw = tp.getWorld().spawn(tp.getLocation(), org.bukkit.entity.Firework.class);
-                                        org.bukkit.inventory.meta.FireworkMeta fwm = fw.getFireworkMeta();
-                                        org.bukkit.Color color = org.bukkit.Color.GREEN;
-                                        if (!tm.isSoloMode() && team.getChatColor() != null) {
-                                            switch (team.getChatColor().name()) {
-                                                case "RED": color = org.bukkit.Color.RED; break;
-                                                case "BLUE": color = org.bukkit.Color.BLUE; break;
-                                                case "GREEN": color = org.bukkit.Color.LIME; break;
-                                                case "YELLOW": color = org.bukkit.Color.YELLOW; break;
-                                                case "AQUA": color = org.bukkit.Color.AQUA; break;
-                                                case "LIGHT_PURPLE": color = org.bukkit.Color.FUCHSIA; break;
-                                                case "GOLD": color = org.bukkit.Color.ORANGE; break;
-                                            }
-                                        }
-                                        fwm.addEffect(org.bukkit.FireworkEffect.builder().withColor(color).with(org.bukkit.FireworkEffect.Type.BALL_LARGE).build());
-                                        fwm.setPower(0);
-                                        fw.setFireworkMeta(fwm);
-                                        fw.detonate();
+
                                     }
                                 }
 
@@ -685,8 +667,8 @@ public class HelGame {
     private void destroyWaitingPlatform() {
         World world = waitingPlatformLocation.getWorld();
         int y = 250;
-        for (int x = -10; x <= 10; x++) {
-            for (int z = -10; z <= 10; z++) {
+        for (int x = -16; x <= 16; x++) {
+            for (int z = -16; z <= 16; z++) {
                 world.getBlockAt(x, y, z).setType(Material.AIR);
                 for (int wallY = 1; wallY <= 3; wallY++)
                     world.getBlockAt(x, y + wallY, z).setType(Material.AIR);

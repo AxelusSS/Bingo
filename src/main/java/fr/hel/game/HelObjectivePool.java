@@ -118,12 +118,12 @@ public class HelObjectivePool {
 
         pool.add(new PoolEntry(Material.SPIDER_EYE, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.FERMENTED_SPIDER_EYE, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.SLIME_BALL, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.SLIME_BALL, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.POINTED_DRIPSTONE, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.GLOW_INK_SAC, Difficulty.MEDIUM));
         pool.add(new PoolEntry(Material.POWDER_SNOW_BUCKET, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.NAME_TAG, Difficulty.MEDIUM));
-        pool.add(new PoolEntry(Material.SADDLE, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.NAME_TAG, Difficulty.EXTREME));
+        pool.add(new PoolEntry(Material.SADDLE, Difficulty.EXTREME));
 
         // Nether basique
         pool.add(new PoolEntry(Material.NETHER_BRICK, Difficulty.MEDIUM));
@@ -179,12 +179,12 @@ public class HelObjectivePool {
         pool.add(new PoolEntry(Material.HEART_OF_THE_SEA, Difficulty.HARD));
         pool.add(new PoolEntry(Material.NAUTILUS_SHELL, Difficulty.HARD));
         pool.add(new PoolEntry(Material.TOTEM_OF_UNDYING, Difficulty.HARD));
-        pool.add(new PoolEntry(Material.TRIDENT, Difficulty.HARD));
+        pool.add(new PoolEntry(Material.TRIDENT, Difficulty.EXTREME));
 
         pool.add(new PoolEntry(Material.SPONGE, Difficulty.HARD));
         pool.add(new PoolEntry(Material.BELL, Difficulty.HARD));
         pool.add(new PoolEntry(Material.RESPAWN_ANCHOR, Difficulty.HARD));
-        pool.add(new PoolEntry(Material.LODESTONE, Difficulty.HARD));
+        pool.add(new PoolEntry(Material.LODESTONE, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.SEA_LANTERN, Difficulty.HARD));
         pool.add(new PoolEntry(Material.OBSIDIAN, Difficulty.HARD));
         pool.add(new PoolEntry(Material.SOUL_LANTERN, Difficulty.HARD));
@@ -232,6 +232,13 @@ public class HelObjectivePool {
         pool.add(new PoolEntry(Material.ELYTRA, Difficulty.EXTREME));
         pool.add(new PoolEntry(Material.DRAGON_BREATH, Difficulty.EXTREME));
 
+        
+        // Nouveaux ajouts
+        pool.add(new PoolEntry(Material.TERRACOTTA, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.WHITE_CONCRETE, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.BLACK_CONCRETE, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.PALE_OAK_LOG, Difficulty.MEDIUM));
+        pool.add(new PoolEntry(Material.PALE_OAK_LEAVES, Difficulty.MEDIUM));
         return pool;
     }
 

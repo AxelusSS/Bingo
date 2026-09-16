@@ -50,6 +50,11 @@ public class BorderManager {
                     return;
                 }
 
+                if (HelPlugin.getInstance().getScenarioManager().isScenarioEnabled(fr.hel.scenario.HelScenario.class)) {
+                    // En mode Bingo, la bordure ne rétrécit pas !
+                    return;
+                }
+
                 if (!shrinking && elapsed >= timeBeforeShrinkMinutes * 60) {
                     shrinking = true;
                     Bukkit.broadcastMessage("\u00A7c\u00A7l\u26A0 La bordure commence \u00E0 r\u00E9tr\u00E9cir !");

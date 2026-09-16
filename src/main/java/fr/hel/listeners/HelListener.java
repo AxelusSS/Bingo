@@ -696,7 +696,6 @@ public class HelListener implements Listener {
                 if (p != null) {
                     cleanupAndSpectate(p);
                     p.sendTitle(team.getChatColor() + "\u00A7lBINGO !", "\u00A77Temps : \u00A7e" + timeStr, 10, 60, 20);
-                    launchFirework(p.getLocation());
                 }
             }
 
@@ -727,19 +726,6 @@ public class HelListener implements Listener {
         }
     }
 
-    private void launchFirework(Location loc) {
-        org.bukkit.entity.Firework fw = loc.getWorld().spawn(loc, org.bukkit.entity.Firework.class);
-        org.bukkit.inventory.meta.FireworkMeta meta = fw.getFireworkMeta();
-        meta.addEffect(org.bukkit.FireworkEffect.builder()
-                .withColor(Color.YELLOW, Color.ORANGE)
-                .withFade(Color.RED)
-                .with(org.bukkit.FireworkEffect.Type.STAR)
-                .flicker(true)
-                .trail(true)
-                .build());
-        meta.setPower(1);
-        fw.setFireworkMeta(meta);
-    }
 
     public void checkEndCondition() {
         HelGame game = HelPlugin.getInstance().getHelGame();
@@ -792,24 +778,22 @@ public class HelListener implements Listener {
     }
 
     public void triggerGameEnd() {
-        Bukkit.getScheduler().runTaskLater(HelPlugin.getInstance(), () -> {
-            Bukkit.broadcastMessage("");
-            Bukkit.broadcastMessage("\u00A76\u00A7l\u2726\u2726\u2726 PARTIE TERMIN\u00C9E ! \u2726\u2726\u2726");
-            Bukkit.broadcastMessage("\u00A77Merci d'avoir jou\u00E9 !");
-            Bukkit.broadcastMessage("");
+        Bukkit.broadcastMessage("");
+        Bukkit.broadcastMessage("\u00A76\u00A7l\u2726\u2726\u2726 PARTIE TERMIN\u00C9E ! \u2726\u2726\u2726");
+        Bukkit.broadcastMessage("\u00A77Merci d'avoir jou\u00E9 !");
+        Bukkit.broadcastMessage("");
 
-            displayRanking();
+        displayRanking();
 
-            HelPlugin.getInstance().getHelGame().setState(GameState.FINISHED);
-            
-            // Mettre tout le monde en spectateur
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.setGameMode(GameMode.SPECTATOR);
-            }
+        HelPlugin.getInstance().getHelGame().setState(GameState.FINISHED);
+        
+        // Mettre tout le monde en spectateur
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.setGameMode(GameMode.SPECTATOR);
+        }
 
-            // T\u00E2che 2 : D\u00E9compte de 300 secondes dans l'ActionBar avant changement de map
-            startEndCountdown();
-        }, 60L);
+        // T\u00E2che 2 : D\u00E9compte de 300 secondes dans l'ActionBar avant changement de map
+        startEndCountdown();
     }
 
     /**
@@ -879,12 +863,18 @@ public class HelListener implements Listener {
         }
     }
  
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onCraft(CraftItemEvent event) {
         if (event.getWhoClicked() instanceof Player player) {
             ItemStack result = event.getCurrentItem();
             if (result != null && result.getType() != Material.AIR) {
-                checkObjective(player, getIdentifier(result));
+                // Délai de 1 tick pour s'assurer que le craft a bien abouti et n'est pas un fake clic
+                Bukkit.getScheduler().runTask(HelPlugin.getInstance(), () -> {
+                    if (player.getInventory().contains(result.getType()) || 
+                       (player.getItemOnCursor() != null && player.getItemOnCursor().getType() == result.getType())) {
+                        checkObjective(player, getIdentifier(result));
+                    }
+                });
             }
         }
     }

@@ -11,6 +11,7 @@ public class ScenarioManager {
     public ScenarioManager() {
         scenarios.add(new EternalDayScenario());
         scenarios.add(new CatEyesScenario());
+        scenarios.add(new BiomeCompassScenario());
         scenarios.add(new KeepInventoryScenario());
         scenarios.add(new NoFoodScenario());
         scenarios.add(new FlowerPowerScenario());

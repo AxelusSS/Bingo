@@ -12,6 +12,7 @@ fr\hel\scenario\MiniNetherScenario.class
 fr\hel\game\ScoreboardManager.class
 fr\hel\commands\CompassCommand.class
 fr\hel\HelPlugin$1.class
+fr\hel\scenario\BiomeCompassScenario.class
 fr\hel\scenario\TripleOresScenario.class
 fr\hel\scenario\HelScenario.class
 fr\hel\scenario\TimberScenario.class
@@ -67,6 +68,7 @@ fr\hel\scenario\ClassicHandScenario.class
 fr\hel\scenario\CatEyesScenario.class
 fr\hel\preset\PresetManager.class
 fr\hel\HelPlugin.class
+fr\hel\scenario\CatEyesScenario$1.class
 fr\hel\scenario\FirelessScenario.class
 fr\hel\game\TablistManager.class
 fr\hel\team\HelTeam.class
