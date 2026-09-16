@@ -19,6 +19,7 @@ commands:
     description: Alias pour team join
   parkour:
     description: Commencer le jump
+    aliases: [jump]
   team:
     description: Gestion des equipes
   pregen:
