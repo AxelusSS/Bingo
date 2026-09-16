@@ -6,6 +6,9 @@ import fr.hel.HelPlugin;
 import fr.hel.team.TeamManager;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
+
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -29,6 +32,11 @@ public class HelGame {
     private BukkitTask pvpWarningTask;
 
     private EndMode endMode = EndMode.ALL_TEAMS;
+    
+    private JumpManager jumpManager = new JumpManager();
+    private ArmorStand lobbyHologram;
+    
+    public JumpManager getJumpManager() { return jumpManager; }
 
     private final java.util.Set<String> disabledPoolItems = new java.util.HashSet<>();
     private final java.util.Set<UUID> startingPlayers = new java.util.HashSet<>();
@@ -131,31 +139,21 @@ public class HelGame {
             for (int z = -16; z <= 16; z++) {
                 world.getBlockAt(x, y, z).setType(Material.GLASS);
                 if (x == -16 || x == 16 || z == -16 || z == 16) {
-                    // Monter les murs très haut pour empêcher de sortir du jump
-                    for (int wallY = 1; wallY <= 30; wallY++) {
+                    for (int wallY = 1; wallY <= 4; wallY++) {
                         world.getBlockAt(x, y + wallY, z).setType(Material.BARRIER);
                     }
                 }
             }
         }
         
-        // Générer un petit jump aléatoire pour patienter
-        java.util.Random r = new java.util.Random(world.getSeed());
-        int jumpY = y + 1;
-        int prevX = 0;
-        int prevZ = 0;
-        for(int i = 0; i < 20; i++) {
-            int jX = r.nextInt(24) - 12;
-            int jZ = r.nextInt(24) - 12;
-            // Assurer que ce n'est pas trop loin du bloc précédent
-            jX = Math.max(-14, Math.min(14, prevX + (r.nextInt(7) - 3)));
-            jZ = Math.max(-14, Math.min(14, prevZ + (r.nextInt(7) - 3)));
-            
-            jumpY += r.nextInt(2) + 1; // Monte de 1 ou 2 blocs max
-            world.getBlockAt(jX, jumpY, jZ).setType(Material.CYAN_STAINED_GLASS);
-            prevX = jX;
-            prevZ = jZ;
-        }
+        if (lobbyHologram != null) lobbyHologram.remove();
+        lobbyHologram = (ArmorStand) world.spawnEntity(waitingPlatformLocation.clone().add(0, 1.5, 0), EntityType.ARMOR_STAND);
+        lobbyHologram.setVisible(false);
+        lobbyHologram.setMarker(true);
+        lobbyHologram.setGravity(false);
+        lobbyHologram.setCustomNameVisible(true);
+        lobbyHologram.setCustomName("§e§lPour accéder au jump, faites /jump");
+
 
         // Jour \u00E9ternel \u00E0 midi + pas de pluie pendant le hub
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
@@ -684,11 +682,14 @@ public class HelGame {
     }
 
     private void destroyWaitingPlatform() {
+        if (lobbyHologram != null) lobbyHologram.remove();
+        jumpManager.cleanupAll();
+        
         World world = waitingPlatformLocation.getWorld();
         int y = 250;
         for (int x = -16; x <= 16; x++) {
             for (int z = -16; z <= 16; z++) {
-                for (int h = 0; h <= 30; h++) {
+                for (int h = 0; h <= 4; h++) {
                     world.getBlockAt(x, y + h, z).setType(Material.AIR);
                 }
             }

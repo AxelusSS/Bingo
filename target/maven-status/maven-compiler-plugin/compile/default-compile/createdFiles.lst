@@ -11,6 +11,7 @@ fr\hel\game\EndMode.class
 fr\hel\scenario\MiniNetherScenario.class
 fr\hel\game\ScoreboardManager.class
 fr\hel\commands\CompassCommand.class
+fr\hel\game\JumpManager.class
 fr\hel\HelPlugin$1.class
 fr\hel\scenario\BiomeCompassScenario.class
 fr\hel\scenario\TripleOresScenario.class
@@ -35,6 +36,7 @@ fr\hel\listeners\HelListener.class
 fr\hel\scenario\MiniNetherUHCRunScenario.class
 fr\hel\listeners\HelListener$1.class
 fr\hel\game\GameState.class
+fr\hel\game\JumpManager$PlayerJumpData.class
 fr\hel\gui\PoolConfigGUI.class
 fr\hel\scenario\ClassicPhysicsScenario.class
 fr\hel\listeners\HelListener$PlayerState.class
@@ -43,6 +45,7 @@ fr\hel\gui\PresetConfigGUI.class
 fr\hel\scenario\ScenarioManager.class
 fr\hel\database\DatabaseManager.class
 fr\hel\gui\HelGridGUI.class
+fr\hel\commands\JumpCommand.class
 fr\hel\game\ScoreboardManager$ScoreEntry.class
 fr\hel\scenario\Scenario.class
 fr\hel\game\BorderManager.class

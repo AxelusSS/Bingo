@@ -17,6 +17,8 @@ commands:
     description: Alias pour bingo size
   tj:
     description: Alias pour team join
+  jump:
+    description: Commencer le jump
   team:
     description: Gestion des equipes
   pregen:

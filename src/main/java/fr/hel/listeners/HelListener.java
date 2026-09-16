@@ -39,6 +39,25 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class HelListener implements Listener {
     @EventHandler
+    public void onPlayerMove(org.bukkit.event.player.PlayerMoveEvent event) {
+        HelGame game = HelPlugin.getInstance().getHelGame();
+        if (game.getState() == fr.hel.game.GameState.WAITING) {
+            org.bukkit.entity.Player p = event.getPlayer();
+            
+            // Failsafe pour ne pas tomber de la map d'attente
+            if (p.getLocation().getY() < 248) {
+                game.teleportToWaitingArea(p);
+                game.getJumpManager().cleanupPlayer(p);
+            }
+            
+            // Logique de génération de saut infinie
+            if (event.getTo() != null && (event.getFrom().getX() != event.getTo().getX() || event.getFrom().getY() != event.getTo().getY() || event.getFrom().getZ() != event.getTo().getZ())) {
+                game.getJumpManager().handleMove(p, event.getTo());
+            }
+        }
+    }
+
+    @EventHandler
     public void onEntityDamage(org.bukkit.event.entity.EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
         HelGame game = HelPlugin.getInstance().getHelGame();
