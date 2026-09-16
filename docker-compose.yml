@@ -18,8 +18,8 @@ services:
       MOTD: '§b§lServeur Bingo HEL §r- §aPrêt pour la game !'
       SPAWN_PROTECTION: '0'
       ENABLE_COMMAND_BLOCK: 'true'
-      RESOURCE_PACK: 'https://github.com/AxelusSS/Bingo/releases/download/V1.6.0/BingoPack.zip'
-      RESOURCE_PACK_SHA1: <METTRE_LE_NOUVEAU_SHA1_ICI>
+      RESOURCE_PACK: 'https://github.com/AxelusSS/Bingo/releases/download/V1.5.0/BingoPack.zip'
+      RESOURCE_PACK_SHA1: d973a099814ec885e2441e201e196b84af153792
       REQUIRE_RESOURCE_PACK: 'true'
       ICON: 'https://github.com/AxelusSS/Bingo/releases/download/V1.6.0/server-icon.png'
     volumes:
