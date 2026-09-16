@@ -152,7 +152,7 @@ public class HelGame {
         lobbyHologram.setMarker(true);
         lobbyHologram.setGravity(false);
         lobbyHologram.setCustomNameVisible(true);
-        lobbyHologram.setCustomName("§e§lPour accéder au jump, faites /jump");
+        lobbyHologram.setCustomName("§e§lPour accéder au jump, faites /parkour");
 
 
         // Jour \u00E9ternel \u00E0 midi + pas de pluie pendant le hub
