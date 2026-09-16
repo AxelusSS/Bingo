@@ -89,6 +89,7 @@ fr\hel\game\HelObjective.class
 fr\hel\scenario\GraveScenario.class
 fr\hel\team\TeamManager.class
 fr\hel\game\DatapackManager.class
+fr\hel\game\HelObjectivePool$ItemCategory.class
 fr\hel\preset\PresetData.class
 fr\hel\scenario\CutCleanScenario$1.class
 fr\hel\game\Difficulty.class
