@@ -1,0 +1,29 @@
+services:
+  bingo-server:
+    image: 'itzg/minecraft-server:java21'
+    container_name: bingo-server
+    cpu_shares: 2048
+    ports:
+      - '25565:25565'
+    environment:
+      TYPE: PURPUR
+      VERSION: 1.21.1
+      EULA: 'true'
+      ONLINE_MODE: 'true'
+      INIT_MEMORY: 2G
+      MAX_MEMORY: 6G
+      USE_AIKAR_FLAGS: 'true'
+      PLUGINS: 'https://github.com/AxelusSS/Bingo/releases/download/V1.5.0/bingo-1.5.0.jar'
+      MODRINTH_PROJECTS: 'chunky, fastasyncworldedit'
+      MOTD: '§b§lServeur Bingo HEL §r- §aPrêt pour la game !'
+      SPAWN_PROTECTION: '0'
+      ENABLE_COMMAND_BLOCK: 'true'
+      RESOURCE_PACK: 'https://github.com/AxelusSS/Bingo/releases/download/V1.5.0/BingoPack.zip'
+      RESOURCE_PACK_SHA1: d973a099814ec885e2441e201e196b84af153792
+      REQUIRE_RESOURCE_PACK: 'true'
+      ICON: 'https://github.com/AxelusSS/Bingo/releases/download/V1.5.0/server-icon.png'
+    volumes:
+      - 'bingo_data:/data'
+volumes:
+  bingo_data:
+    name: bingo_data
