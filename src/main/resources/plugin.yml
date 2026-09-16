@@ -1,5 +1,5 @@
 name: HEL
-version: 1.5.0
+version: 1.6.0
 main: fr.hel.HelPlugin
 api-version: 1.21
 authors: [Antigravity]
