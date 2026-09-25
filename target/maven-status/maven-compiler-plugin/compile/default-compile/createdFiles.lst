@@ -1,5 +1,6 @@
 fr\hel\scenario\FastSmeltingScenario.class
 fr\hel\commands\RankCommand.class
+fr\hel\scenario\BiomeCompassScenario$StructEntry.class
 fr\hel\gui\AnonymousConfigGUI.class
 fr\hel\scenario\SwitchInventoryScenario.class
 fr\hel\game\HelObjectivePool$PoolEntry.class
@@ -52,6 +53,7 @@ fr\hel\game\BorderManager.class
 fr\hel\gui\ScenarioConfigGUI.class
 fr\hel\scenario\BoostLootScenario$1.class
 fr\hel\gui\RouletteGUI.class
+fr\hel\scenario\BiomeCompassScenario$BiomeEntry.class
 fr\hel\commands\HelCommand.class
 fr\hel\scenario\AnonymousScenario.class
 fr\hel\scenario\TeamInventoryScenario.class

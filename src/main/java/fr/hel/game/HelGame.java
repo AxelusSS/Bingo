@@ -269,11 +269,6 @@ public class HelGame {
             startInventoryScanner();
         }
 
-        // Scanner d'inventaire (seulement si Hel actif)
-        if (isHelMode) {
-            startInventoryScanner();
-        }
-
         // \u2500\u2500 PVP Timer \u2500\u2500
         schedulePvpTimer();
 
@@ -281,12 +276,13 @@ public class HelGame {
         scheduleGameDurationTimer();
 
         // \u2500\u2500 Bordure \u2500\u2500
-        if (borderEnabled) {
+        if (borderEnabled && !isHelMode) {
             HelPlugin.getInstance().getBorderManager().startBorder();
         } else {
-            // S'assurer que la bordure est grande si d\u00E9sactiv\u00E9e
+            // En mode Bingo ou bordure d\u00E9sactiv\u00E9e : maximum
             World bw = Bukkit.getWorlds().get(0);
-            bw.getWorldBorder().setSize(10000);
+            bw.getWorldBorder().setCenter(0, 0);
+            bw.getWorldBorder().setSize(60000000);
         }
 
         Bukkit.broadcastMessage("\u00A76\u00A7l\u25BA\u25BA LA PARTIE D\u00C9MARRE ! \u25C4\u25C4 \u00A7r\u00A7eQue le meilleur gagne !");
