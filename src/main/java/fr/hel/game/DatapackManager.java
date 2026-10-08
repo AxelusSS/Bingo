@@ -56,7 +56,25 @@ public class DatapackManager {
 
         // Ne d\u00E9sactiver les advancements vanilla que en mode ITEMS pur
         if (mode == HelMode.ITEMS) {
-            disableVanillaAdvancements(dataFolder.getParentFile().getParentFile());
+                    disableVanillaAdvancements(dataFolder.getParentFile().getParentFile());
+        
+        // --- FIX POUR LA COMPATIBILITÉ 1.20 vs 1.21 ---
+        // Copier 'advancement' vers 'advancements'
+        try {
+            File advancementsFolder = new File(dataFolder.getParentFile(), "advancements");
+            if (!advancementsFolder.exists()) advancementsFolder.mkdirs();
+            copyDirectory(dataFolder, advancementsFolder);
+            
+            // Et pour minecraft/advancement vers minecraft/advancements
+            File mcAdv = new File(dataFolder.getParentFile().getParentFile(), "minecraft/advancement");
+            File mcAdvs = new File(dataFolder.getParentFile().getParentFile(), "minecraft/advancements");
+            if (mcAdv.exists()) {
+                if (!mcAdvs.exists()) mcAdvs.mkdirs();
+                copyDirectory(mcAdv, mcAdvs);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         }
 
         createRootAdvancement(dataFolder);
@@ -92,14 +110,15 @@ public class DatapackManager {
                 Bukkit.broadcastMessage("§e[DEBUG] Liste des advancements 'hel:' en mémoire :");
                 int count = 0;
                 java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
+                Bukkit.broadcastMessage("§e[DEBUG] Tous les custom advancements trouvés :");
                 while (it.hasNext()) {
                     org.bukkit.advancement.Advancement adv = it.next();
-                    if (adv.getKey().getNamespace().equals("hel")) {
+                    if (!adv.getKey().getNamespace().equals("minecraft") && !adv.getKey().getNamespace().equals("bukkit") && !adv.getKey().getNamespace().equals("paper") && !adv.getKey().getNamespace().equals("purpur")) {
                         Bukkit.broadcastMessage("§e - " + adv.getKey().toString());
                         count++;
                     }
                 }
-                Bukkit.broadcastMessage("§eTotal 'hel:' trouvés : " + count);
+                Bukkit.broadcastMessage("§eTotal custom trouvés : " + count);
                 
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.sendMessage("§b§l[Hel] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
@@ -253,6 +272,26 @@ public class DatapackManager {
         
         // Deuxième reload pour appliquer les fichiers
         Bukkit.reloadData();
+    }
+
+        private void copyDirectory(File source, File target) throws java.io.IOException {
+        if (source.isDirectory()) {
+            if (!target.exists()) target.mkdirs();
+            String[] children = source.list();
+            for (int i=0; i<children.length; i++) {
+                copyDirectory(new File(source, children[i]), new File(target, children[i]));
+            }
+        } else {
+            java.io.InputStream in = new java.io.FileInputStream(source);
+            java.io.OutputStream out = new java.io.FileOutputStream(target);
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            in.close();
+            out.close();
+        }
     }
 
     private void cleanDirectory(File folder) {
