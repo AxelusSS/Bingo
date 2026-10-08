@@ -85,18 +85,10 @@ public class DatapackManager {
         Bukkit.getScheduler().runTaskLater(HelPlugin.getInstance(), () -> {
             enableAndReload();
             
-            // Accorder l'advancement root à tout le monde pour forcer l'affichage de l'onglet
-            org.bukkit.advancement.Advancement rootAdv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("hel", "root"));
-            if (rootAdv != null) {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(rootAdv);
-                    for (String crit : progress.getRemainingCriteria()) {
-                        progress.awardCriteria(crit);
-                    }
-                    p.sendMessage("\u00A7b\u00A7l[Hel] \u00A7aGrille mise \u00E0 jour ! Appuyez sur \u00A7e[L] \u00A7apour la voir.");
-                }
-            } else {
-                Bukkit.broadcastMessage("\u00A7c[DEBUG] ERREUR : L'advancement hel:root n'a pas pu étre récupéré après le rechargement !");
+            // Accorder l'advancement root nativement via la commande pour contourner les bugs de l'API Bukkit
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "advancement grant @a only hel:root");
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                p.sendMessage("§b§l[Hel] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
             }
         }, 10L);
     }
