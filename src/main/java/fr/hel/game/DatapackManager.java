@@ -132,9 +132,7 @@ public class DatapackManager {
                 "    \"frame\": \"challenge\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false,\n" +
-                "    \"x\": " + (double) (col * 1.5) + ",\n" +
-                "    \"y\": " + (double) (row * 1.5) + "\n" +
+                "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
@@ -153,9 +151,7 @@ public class DatapackManager {
                 "    \"background\": \"minecraft:textures/block/light_blue_concrete_powder.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false,\n" +
-                "    \"x\": -1.5,\n" +
-                "    \"y\": 3.0\n" +
+                "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
