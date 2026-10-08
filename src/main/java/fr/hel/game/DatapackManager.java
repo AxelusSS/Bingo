@@ -206,6 +206,17 @@ public class DatapackManager {
                 "    \"description\": \"Hel\"\n" +
                 "  }\n" +
                 "}");
+        Bukkit.broadcastMessage("§e[DEBUG] pack.mcmeta a été écrit dans : " + new File(dir, "pack.mcmeta").getAbsolutePath());
+        Bukkit.broadcastMessage("§e[DEBUG] Est-ce que le fichier existe ? " + new File(dir, "pack.mcmeta").exists());
+        
+        File datapacksFolder = dir.getParentFile();
+        Bukkit.broadcastMessage("§e[DEBUG] Dossier parent 'datapacks' existe ? " + datapacksFolder.exists());
+        if (datapacksFolder.exists()) {
+            Bukkit.broadcastMessage("§e[DEBUG] Contenu de " + datapacksFolder.getAbsolutePath() + " :");
+            for (String s : datapacksFolder.list()) {
+                Bukkit.broadcastMessage("§e - " + s);
+            }
+        }
     }
 
     private void enableAndReload() {
