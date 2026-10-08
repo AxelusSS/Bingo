@@ -159,7 +159,9 @@ public class DatapackManager {
                 "    \"frame\": \"challenge\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
+                "    \"hidden\": false,\n" +
+                "    \"x\": " + (double) (col * 1.5) + ",\n" +
+                "    \"y\": " + (double) (row * 1.5) + "\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"found\": { \"trigger\": \"minecraft:impossible\" }\n" +
@@ -173,12 +175,14 @@ public class DatapackManager {
                 "{\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
-                "    \"title\": { \"text\": \"Hel Classique\" },\n" +
+                "    \"title\": { \"text\": \"Bingo\" },\n" +
                 "    \"description\": { \"text\": \"Utilisez /bg pour voir votre progression\" },\n" +
-                "    \"background\": \"minecraft:textures/block/light_blue_concrete_powder.png\",\n" +
+                "    \"background\": \"minecraft:textures/gui/advancements/backgrounds/adventure.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
-                "    \"hidden\": false\n" +
+                "    \"hidden\": false,\n" +
+                "    \"x\": -1.5,\n" +
+                "    \"y\": 3.0\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
                 "    \"auto\": { \"trigger\": \"minecraft:impossible\" }\n" +
