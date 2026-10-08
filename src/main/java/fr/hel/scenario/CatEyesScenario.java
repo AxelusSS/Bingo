@@ -22,8 +22,8 @@ public class CatEyesScenario extends Scenario {
                     return;
                 }
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    // Durée de 10 secondes (200 ticks), amplificateur 0
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 200, 0, false, false, false));
+                    // Durée de 60 secondes (1200 ticks), amplificateur 0
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 1200, 0, false, false, false));
                 }
             }
         }.runTaskTimer(fr.hel.HelPlugin.getInstance(), 0L, 100L); // Toutes les 5 secondes
