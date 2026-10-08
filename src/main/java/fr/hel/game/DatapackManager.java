@@ -154,7 +154,7 @@ public class DatapackManager {
                 "    \"hidden\": false\n" +
                 "  },\n" +
                 "  \"criteria\": {\n" +
-                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
+                "    \"auto\": { \"trigger\": \"minecraft:impossible\" }\n" +
                 "  }\n" +
                 "}");
     }
@@ -168,7 +168,7 @@ public class DatapackManager {
                 "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"criteria\": {\n" +
-                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
+                "    \"auto\": { \"trigger\": \"minecraft:impossible\" }\n" +
                 "  }\n" +
                 "}");
     }
@@ -200,15 +200,28 @@ public class DatapackManager {
 
     private void writePackMcmeta(File dir) {
         saveFile(dir, "pack.mcmeta",
-                "{ \"pack\": { \"pack_format\": 48, \"supported_formats\": {\"min_inclusive\": 48, \"max_inclusive\": 99}, \"description\": \"Hel\" } }");
+                "{\n" +
+                "  \"pack\": {\n" +
+                "    \"pack_format\": 48,\n" +
+                "    \"description\": \"Hel\"\n" +
+                "  }\n" +
+                "}");
     }
 
     private void enableAndReload() {
         // Premier reload pour découvrir le datapack
         Bukkit.reloadData();
+        
+        // Debug: Lister les datapacks disponibles
+        Bukkit.broadcastMessage("§e[DEBUG] Liste des datapacks scannés par le serveur :");
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack list");
+
         // Forcer l'activation même si le pack_format ne correspond pas parfaitement
         try { Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"file/bingo_datapack\""); }
         catch (Exception ignored) {}
+        try { Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"bingo_datapack\""); }
+        catch (Exception ignored) {}
+        
         // Deuxième reload pour appliquer les fichiers
         Bukkit.reloadData();
     }

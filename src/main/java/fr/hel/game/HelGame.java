@@ -266,6 +266,18 @@ public class HelGame {
 
         // Scanner d'inventaire (seulement si Hel actif)
         if (isHelMode) {
+            org.bukkit.advancement.Advancement root = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("hel", "root"));
+            if (root != null) {
+                Bukkit.broadcastMessage("§a[DEBUG] L'advancement hel:root EST CHARGÉ dans le serveur !");
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    org.bukkit.advancement.AdvancementProgress progress = p.getAdvancementProgress(root);
+                    for (String crit : progress.getRemainingCriteria()) {
+                        progress.awardCriteria(crit);
+                    }
+                }
+            } else {
+                Bukkit.broadcastMessage("§c[DEBUG] ERREUR : L'advancement hel:root n'existe pas ! Le JSON est invalide ou le datapack a échoué.");
+            }
             startInventoryScanner();
         }
 
