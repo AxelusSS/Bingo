@@ -13,7 +13,7 @@ services:
       INIT_MEMORY: 2G
       MAX_MEMORY: 6G
       USE_AIKAR_FLAGS: 'true'
-      PLUGINS: 'https://github.com/AxelusSS/Bingo/releases/download/V1.6.0/bingo-1.6.0.jar'
+      PLUGINS: 'https://raw.githubusercontent.com/AxelusSS/Bingo/V1.6/release/bingo-1.6.0.jar'
       MODRINTH_PROJECTS: 'chunky, fastasyncworldedit'
       MOTD: '§b§lServeur Bingo HEL §r- §aPrêt pour la game !'
       SPAWN_PROTECTION: '0'
