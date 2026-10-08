@@ -189,8 +189,8 @@ public class DatapackManager {
     // \u2500\u2500 Utilitaires \u2500\u2500
 
     private File getDataFolder() {
-        File f = new File(Bukkit.getWorlds().get(0).getWorldFolder(),
-                "datapacks/bingo_datapack/data/" + namespace + "/advancement");
+        File worldDir = new File(Bukkit.getServer().getWorldContainer(), Bukkit.getWorlds().get(0).getName());
+        File f = new File(worldDir, "datapacks/bingo_datapack/data/" + namespace + "/advancement");
         if (!f.exists() && !f.mkdirs()) {
             HelPlugin.getInstance().getLogger().severe("Impossible de cr\u00E9er le dossier datapack !");
             return null;
