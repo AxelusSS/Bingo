@@ -127,8 +127,8 @@ public class DatapackManager {
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"" + iconId + "\" },\n" +
-                "    \"title\": \"" + name + "\",\n" +
-                "    \"description\": \"" + desc + "\",\n" +
+                "    \"title\": { \"text\": \"" + name + "\" },\n" +
+                "    \"description\": { \"text\": \"" + desc + "\" },\n" +
                 "    \"frame\": \"challenge\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
@@ -148,8 +148,8 @@ public class DatapackManager {
                 "{\n" +
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
-                "    \"title\": \"Hel Classique\",\n" +
-                "    \"description\": \"Utilisez /bg pour voir votre progression\",\n" +
+                "    \"title\": { \"text\": \"Hel Classique\" },\n" +
+                "    \"description\": { \"text\": \"Utilisez /bg pour voir votre progression\" },\n" +
                 "    \"background\": \"minecraft:textures/block/light_blue_concrete_powder.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
@@ -204,7 +204,7 @@ public class DatapackManager {
 
     private void writePackMcmeta(File dir) {
         saveFile(dir, "pack.mcmeta",
-                "{ \"pack\": { \"pack_format\": 71, \"supported_formats\": [48, 71], \"description\": \"Hel\" } }");
+                "{ \"pack\": { \"pack_format\": 48, \"supported_formats\": {\"min_inclusive\": 48, \"max_inclusive\": 99}, \"description\": \"Hel\" } }");
     }
 
     private void enableAndReload() {
