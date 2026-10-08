@@ -105,20 +105,10 @@ public class DatapackManager {
             
             // Accorder l'advancement root nativement via la commande pour contourner les bugs de l'API Bukkit
             Bukkit.getScheduler().runTaskLater(HelPlugin.getInstance(), () -> {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "advancement grant @a only hel:root");
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "advancement grant @a only bingoclassique:root");
                 
                 Bukkit.broadcastMessage("§e[DEBUG] Liste des advancements 'hel:' en mémoire :");
-                int count = 0;
-                java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
-                Bukkit.broadcastMessage("§e[DEBUG] Tous les custom advancements trouvés :");
-                while (it.hasNext()) {
-                    org.bukkit.advancement.Advancement adv = it.next();
-                    if (!adv.getKey().getNamespace().equals("minecraft") && !adv.getKey().getNamespace().equals("bukkit") && !adv.getKey().getNamespace().equals("paper") && !adv.getKey().getNamespace().equals("purpur")) {
-                        Bukkit.broadcastMessage("§e - " + adv.getKey().toString());
-                        count++;
-                    }
-                }
-                Bukkit.broadcastMessage("§eTotal custom trouvés : " + count);
+
                 
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.sendMessage("§b§l[Hel] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
@@ -243,17 +233,7 @@ public class DatapackManager {
                 "    \"description\": \"Hel\"\n" +
                 "  }\n" +
                 "}");
-        Bukkit.broadcastMessage("§e[DEBUG] pack.mcmeta a été écrit dans : " + new File(dir, "pack.mcmeta").getAbsolutePath());
-        Bukkit.broadcastMessage("§e[DEBUG] Est-ce que le fichier existe ? " + new File(dir, "pack.mcmeta").exists());
-        
-        File datapacksFolder = dir.getParentFile();
-        Bukkit.broadcastMessage("§e[DEBUG] Dossier parent 'datapacks' existe ? " + datapacksFolder.exists());
-        if (datapacksFolder.exists()) {
-            Bukkit.broadcastMessage("§e[DEBUG] Contenu de " + datapacksFolder.getAbsolutePath() + " :");
-            for (String s : datapacksFolder.list()) {
-                Bukkit.broadcastMessage("§e - " + s);
-            }
-        }
+
     }
 
     private void enableAndReload() {
@@ -261,8 +241,7 @@ public class DatapackManager {
         Bukkit.reloadData();
         
         // Debug: Lister les datapacks disponibles
-        Bukkit.broadcastMessage("§e[DEBUG] Liste des datapacks scannés par le serveur :");
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack list");
+
 
         // Forcer l'activation même si le pack_format ne correspond pas parfaitement
         try { Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"file/bingo_datapack\""); }
