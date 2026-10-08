@@ -204,8 +204,12 @@ public class DatapackManager {
     }
 
     private void enableAndReload() {
+        // Premier reload pour découvrir le datapack
+        Bukkit.reloadData();
+        // Forcer l'activation même si le pack_format ne correspond pas parfaitement
         try { Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "datapack enable \"file/bingo_datapack\""); }
         catch (Exception ignored) {}
+        // Deuxième reload pour appliquer les fichiers
         Bukkit.reloadData();
     }
 
