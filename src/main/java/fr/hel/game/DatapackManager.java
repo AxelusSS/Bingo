@@ -86,10 +86,25 @@ public class DatapackManager {
             enableAndReload();
             
             // Accorder l'advancement root nativement via la commande pour contourner les bugs de l'API Bukkit
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "advancement grant @a only hel:root");
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.sendMessage("§b§l[Hel] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
-            }
+            Bukkit.getScheduler().runTaskLater(HelPlugin.getInstance(), () -> {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "advancement grant @a only hel:root");
+                
+                Bukkit.broadcastMessage("§e[DEBUG] Liste des advancements 'hel:' en mémoire :");
+                int count = 0;
+                java.util.Iterator<org.bukkit.advancement.Advancement> it = Bukkit.advancementIterator();
+                while (it.hasNext()) {
+                    org.bukkit.advancement.Advancement adv = it.next();
+                    if (adv.getKey().getNamespace().equals("hel")) {
+                        Bukkit.broadcastMessage("§e - " + adv.getKey().toString());
+                        count++;
+                    }
+                }
+                Bukkit.broadcastMessage("§eTotal 'hel:' trouvés : " + count);
+                
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.sendMessage("§b§l[Hel] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
+                }
+            }, 20L); // Wait an extra second just in case!
         }, 10L);
     }
 
