@@ -175,7 +175,7 @@ public class DatapackManager {
                 "  \"display\": {\n" +
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": { \"text\": \"Bingo\" },\n" +
-                "    \"background\": \"minecraft:gui/advancements/backgrounds/stone\",\n" +
+                "    \"background\": \"minecraft:block/light_blue_concrete_powder\",\n" +
                 "    \"description\": { \"text\": \"Utilisez /bg pour voir votre progression\" },\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
