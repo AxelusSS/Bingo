@@ -177,7 +177,7 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": { \"text\": \"Bingo\" },\n" +
                 "    \"description\": { \"text\": \"Utilisez /bg pour voir votre progression\" },\n" +
-                "    \"background\": \"minecraft:textures/gui/advancements/backgrounds/adventure.png\",\n" +
+                "    \"background\": \"minecraft:textures/gui/advancements/backgrounds/stone.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false,\n" +
