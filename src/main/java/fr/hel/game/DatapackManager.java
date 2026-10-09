@@ -107,8 +107,7 @@ public class DatapackManager {
             Bukkit.getScheduler().runTaskLater(HelPlugin.getInstance(), () -> {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "advancement grant @a only bingoclassique:root");
                 
-                Bukkit.broadcastMessage("§e[DEBUG] Liste des advancements 'hel:' en mémoire :");
-
+                
                 
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.sendMessage("§b§l[Hel] §aGrille mise à jour ! Appuyez sur §e[L] §apour la voir.");
@@ -177,7 +176,6 @@ public class DatapackManager {
                 "    \"icon\": { \"id\": \"minecraft:nether_star\" },\n" +
                 "    \"title\": { \"text\": \"Bingo\" },\n" +
                 "    \"description\": { \"text\": \"Utilisez /bg pour voir votre progression\" },\n" +
-                "    \"background\": \"minecraft:textures/gui/advancements/backgrounds/stone.png\",\n" +
                 "    \"show_toast\": false,\n" +
                 "    \"announce_to_chat\": false,\n" +
                 "    \"hidden\": false,\n" +
