@@ -482,7 +482,7 @@ public class HelListener implements Listener {
         }
 
         // D\u00E9tection d'items pour le Hel (si dans l'inventaire du joueur)
-        if (HelPlugin.getInstance().getHelGame().getState() == GameState.PLAYING) {
+        if (HelPlugin.getInstance().getHelGame().getState() == GameState.PLAYING && !event.isCancelled()) {
             ItemStack clicked = event.getCurrentItem();
             if (clicked != null && clicked.getType() != Material.AIR) {
                 checkObjective(player, getIdentifier(clicked));
@@ -887,7 +887,7 @@ public class HelListener implements Listener {
 
     // \u2500\u2500 Events de d\u00E9tection \u2500\u2500
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player) {
             checkObjective(player, getIdentifier(event.getItem().getItemStack()));
