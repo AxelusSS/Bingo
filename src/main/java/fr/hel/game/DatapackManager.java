@@ -199,7 +199,7 @@ public class DatapackManager {
                 "{\n" +
                 "  \"parent\": \"" + parent + "\",\n" +
                 "  \"criteria\": {\n" +
-                "    \"auto\": { \"trigger\": \"minecraft:impossible\" }\n" +
+                "    \"auto\": { \"trigger\": \"minecraft:tick\" }\n" +
                 "  }\n" +
                 "}");
     }
